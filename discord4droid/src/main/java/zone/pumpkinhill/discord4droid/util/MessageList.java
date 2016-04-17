@@ -115,7 +115,7 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
      * @return The message object for this index.
      */
     @Override
-    public Message get(int index) {
+    public synchronized Message get(int index) {
         while (size() <= index) {
             try {
                 if (!load(MESSAGE_CHUNK_COUNT))
@@ -174,7 +174,7 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
      * @return True if the object was successfully cached, false if otherwise.
      */
     @Override
-    public boolean add(Message message) {
+    public synchronized boolean add(Message message) {
         return add(message, false);
     }
 
@@ -214,7 +214,7 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
     }
 
     @Override
-    public boolean remove(Object o) {
+    public synchronized boolean remove(Object o) {
         return o instanceof Message &&
                 ((Message)o).getChannel().equals(channel) &&
                 messageCache.remove(o);
@@ -224,7 +224,7 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
      * {@inheritDoc}
      */
     @Override
-    public Message remove(int index) {
+    public synchronized Message remove(int index) {
         if (index >= size()) {
             throw new ArrayIndexOutOfBoundsException();
         }
