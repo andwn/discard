@@ -1,0 +1,11 @@
+*.iml
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
+signing.properties
+discord4droid/src/main/obj
+discord4droid/src/main/libs
