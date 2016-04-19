@@ -423,21 +423,19 @@ public class DiscordWS extends WebSocketAdapter {
         client.isReady = true;
 
         // I hope you like loops.
-        if(client.getGuilds().isEmpty()) { // If the guild list is populated we are probably reconnecting
-            for (GuildResponse guildResponse : event.guilds) {
-                if (guildResponse.unavailable) { //Guild can't be reached, so we ignore it
-                    Log.w(TAG, "Guild with id " + guildResponse.id + " is unavailable, ignoring it.");
-                    continue;
-                }
-
-                Guild guild = DiscordUtils.getGuildFromJSON(client, guildResponse);
-                if (guild != null)
-                    client.guildList.add(guild);
+        client.guildList.clear();
+        for (GuildResponse guildResponse : event.guilds) {
+            if (guildResponse.unavailable) { //Guild can't be reached, so we ignore it
+                Log.w(TAG, "Guild with id " + guildResponse.id + " is unavailable, ignoring it.");
+                continue;
             }
-            for (PrivateChannelResponse privateChannelResponse : event.private_channels) {
-                PrivateChannel channel = DiscordUtils.getPrivateChannelFromJSON(client, privateChannelResponse);
-                client.privateChannels.add(channel);
-            }
+            Guild newGuild = DiscordUtils.getGuildFromJSON(client, guildResponse);
+            if (newGuild != null) client.guildList.add(newGuild);
+        }
+        client.privateChannels.clear();
+        for (PrivateChannelResponse privateChannelResponse : event.private_channels) {
+            PrivateChannel channel = DiscordUtils.getPrivateChannelFromJSON(client, privateChannelResponse);
+            client.privateChannels.add(channel);
         }
         for (ReadyEventResponse.ReadStateResponse readState : event.read_state) {
             Channel channel = client.getChannelByID(readState.id);

@@ -3,6 +3,7 @@ package zone.pumpkinhill.discard.adapter;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,14 +12,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
+import zone.pumpkinhill.discard.task.LoadMessagesTask;
+import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
+import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatMessageAdapter extends BaseAdapter {
@@ -110,14 +117,13 @@ public class ChatMessageAdapter extends BaseAdapter {
         TextView content = (TextView) view.findViewById(R.id.messageTextView);
         content.setText(msg.getContent());
         // Attachment
+        ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
         if(msg.getAttachments().size() >= 1) {
-            Log.i(TAG, "There is at least 1 attachment.");
-            ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
             String attURL = msg.getAttachments().get(0).getUrl();
-            Log.i(TAG, "URL: " + attURL);
-            if(attURL.endsWith(".jpg") || attURL.endsWith(".jpeg") || attURL.endsWith(".png")) {
+            Log.v(TAG, "Attachment URL: " + attURL);
+            if (isImageFilename(attURL)) {
                 Bitmap bmp = ClientHelper.getImageFromCache(attURL);
-                if(bmp == null) {
+                if (bmp == null) {
                     // Bitmap not cached and needs to download, load in background
                     new ImageDownloaderTask(attachment).execute(attURL);
                 } else {
@@ -125,11 +131,52 @@ public class ChatMessageAdapter extends BaseAdapter {
                 }
             } else {
                 Log.w(TAG, "Unknown attachment file type: " + attURL);
+                attachment.setImageResource(android.R.drawable.stat_notify_error);
             }
-        } else {
-            ((ImageView)view.findViewById(R.id.attachment)).setImageResource(android.R.color.transparent);
+        } else { // Links
+            String[] links = extractLinks(msg.getContent());
+            if(links.length > 0) {
+                boolean anyImages = false;
+                for(String link : links) {
+                    if(isImageFilename(link)) {
+                        Bitmap bmp = ClientHelper.getImageFromCache(link);
+                        if (bmp == null) {
+                            // Bitmap not cached and needs to download, load in background
+                            new ImageDownloaderTask(attachment).execute(link);
+                        } else {
+                            attachment.setImageBitmap(bmp);
+                        }
+                        anyImages = true;
+                        break;
+                    }
+                }
+                if(!anyImages) {
+                    attachment.setImageResource(android.R.color.transparent);
+                }
+            } else {
+                attachment.setImageResource(android.R.color.transparent);
+            }
         }
         return view;
+    }
+
+    private static String[] extractLinks(String text) {
+        List<String> links = new ArrayList<>();
+        Matcher m = Patterns.WEB_URL.matcher(text);
+        while (m.find()) {
+            String url = m.group();
+            Log.v(TAG, "URL extracted: " + url);
+            links.add(url);
+        }
+
+        return links.toArray(new String[links.size()]);
+    }
+
+    private static boolean isImageFilename(String text) {
+        return text.toLowerCase().endsWith(".jpg") ||
+                text.toLowerCase().endsWith(".jpeg") ||
+                text.toLowerCase().endsWith(".png") ||
+                text.toLowerCase().endsWith(".gif");
     }
 
     @Override

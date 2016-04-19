@@ -20,6 +20,7 @@ import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discard.adapter.PrivateChannelAdapter;
 import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
+import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
@@ -29,6 +30,7 @@ import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
+import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatActivity extends AppCompatActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
@@ -118,6 +120,9 @@ public class ChatActivity extends AppCompatActivity {
         mMessageList = (ListView) findViewById(R.id.messageListView);
         if(mMessageList != null) {
             mMessageList.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
+            new LoadMessagesTask(mChannel.getMessages(), mMessageList).execute();
+            ClientHelper.client.getDispatcher().registerListener(
+                    new MessageList.MessageListEventListener(mChannel.getMessages()));
         }
         Button sendButton = (Button) findViewById(R.id.sendButton);
         if(sendButton != null) {

@@ -131,7 +131,7 @@ public class Channel {
         this.roleOverrides = roleOverrides;
         this.userOverrides = userOverrides;
         if (!(this instanceof VoiceChannel))
-            this.messages = new MessageList(client, this, MessageList.MESSAGE_CHUNK_COUNT);
+            this.messages = new MessageList(client, this);
         else
             this.messages = null;
     }

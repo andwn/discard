@@ -3,10 +3,7 @@ package zone.pumpkinhill.discard.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,8 +21,6 @@ import android.widget.TextView;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.DiscordService;
 import zone.pumpkinhill.discard.R;
-import zone.pumpkinhill.discard.ScreenReceiver;
-import zone.pumpkinhill.discard.task.EventSetupTask;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class LoginActivity extends AppCompatActivity {
