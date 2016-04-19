@@ -56,7 +56,8 @@
             android:text="(Message)"
             android:id="@+id/messageTextView"
             android:textColor="#222222"
-            android:linksClickable="true" />
+            android:linksClickable="true"
+            android:autoLink="web" />
 
         <ImageView
             android:layout_width="match_parent"

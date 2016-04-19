@@ -1,5 +1,6 @@
 package zone.pumpkinhill.discard.activity;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -36,6 +37,8 @@ public class ChatActivity extends AppCompatActivity {
     private Channel mChannel;
     private ListView mMessageList;
 
+    private Context mContext = this;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,14 +69,14 @@ public class ChatActivity extends AppCompatActivity {
             drNotify.setText("");
             // Setup adapter for text channel list
             ListView textChannels = (ListView) findViewById(R.id.textChannelList);
-            textChannels.setAdapter(new PrivateChannelAdapter(getApplicationContext(), channelList));
+            textChannels.setAdapter(new PrivateChannelAdapter(mContext, channelList));
             // Setup onItemClick for text channel list
             textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     ListView messages = (ListView) findViewById(R.id.messageListView);
                     mChannel = (Channel) parent.getAdapter().getItem(position);
-                    messages.setAdapter(new ChatMessageAdapter(getApplicationContext(), mChannel.getMessages()));
+                    messages.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
                     setTitle(mChannel.getName());
                 }
             });
@@ -96,25 +99,25 @@ public class ChatActivity extends AppCompatActivity {
             drNotify.setText("");
             // Setup adapter for text channel list
             ListView textChannels = (ListView) findViewById(R.id.textChannelList);
-            textChannels.setAdapter(new TextChannelAdapter(getApplicationContext(), mGuild.getChannels()));
+            textChannels.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));
             // Setup onItemClick for text channel list
             textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     ListView messages = (ListView) findViewById(R.id.messageListView);
                     mChannel = (Channel) parent.getAdapter().getItem(position);
-                    messages.setAdapter(new ChatMessageAdapter(getApplicationContext(), mChannel.getMessages()));
+                    messages.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
                     setTitle(mChannel.getName());
                 }
             });
             // Setup adapter for text channel list
             ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
-            voiceChannels.setAdapter(new VoiceChannelAdapter(getApplicationContext(), mGuild.getVoiceChannels()));
+            voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
         }
         // Fill in message list
         mMessageList = (ListView) findViewById(R.id.messageListView);
         if(mMessageList != null) {
-            mMessageList.setAdapter(new ChatMessageAdapter(getApplicationContext(), mChannel.getMessages()));
+            mMessageList.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
         }
         Button sendButton = (Button) findViewById(R.id.sendButton);
         if(sendButton != null) {
