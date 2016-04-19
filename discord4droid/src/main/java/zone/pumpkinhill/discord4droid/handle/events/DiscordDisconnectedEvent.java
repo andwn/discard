@@ -45,6 +45,10 @@ public class DiscordDisconnectedEvent extends Event {
         /**
          * The websocket attempting to reconnect.
          */
-        RECONNECTING
+        RECONNECTING,
+        /**
+         * Disconnected websocket to save device battery
+         */
+        SUSPENDED
     }
 }

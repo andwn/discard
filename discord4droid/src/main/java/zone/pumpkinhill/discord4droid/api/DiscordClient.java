@@ -155,6 +155,11 @@ public final class DiscordClient {
      */
     protected Date launchTime;
 
+    /**
+     * Suspended state disconnects from websockets to save battery
+     */
+    protected boolean suspended;
+
     public DiscordClient(String email, String password) {
         this.email = email;
         this.password = password;
@@ -224,6 +229,7 @@ public final class DiscordClient {
             if(response.content != null) this.cdn = response.content;
             this.ws = new DiscordWS(this, obtainGateway(getToken()), timeoutTime, maxMissedPingCount);
             launchTime = new Date();
+            suspended = false;
         } catch (Exception e) {
             throw new DiscordException("Login error occurred! Are your login details correct?");
         }
@@ -269,6 +275,33 @@ public final class DiscordClient {
         }
         Log.i(TAG, "Obtained gateway: " + gateway);
         return gateway;
+    }
+
+    public void suspend() {
+        if(suspended) return;
+        suspended = true;
+        Log.i(TAG, "Suspending websocket connection.");
+        if (ws != null) {
+            ws.disconnect(DiscordDisconnectedEvent.Reason.SUSPENDED);
+            for (DiscordVoiceWS vws : voiceConnections.values()) {
+                vws.disconnect(VoiceDisconnectedEvent.Reason.LOGGED_OUT);
+            }
+            lastSequence = 0;
+            sessionId = null; //Prevents the websocket from sending a resume request.
+        }
+
+    }
+
+    public void resume() throws DiscordException {
+        if(!suspended) return;
+        suspended = false;
+        Log.i(TAG, "Resuming websocket connection.");
+        try {
+            this.ws = new DiscordWS(this, obtainGateway(getToken()), timeoutTime, maxMissedPingCount);
+            launchTime = new Date();
+        } catch(Exception e) {
+            throw new DiscordException("Error occurred resuming websocket connection: " + e);
+        }
     }
 
     private void changeAccountInfo(String username, String email, String password, Bitmap avatar) throws HTTP429Exception, DiscordException {
@@ -363,7 +396,7 @@ public final class DiscordClient {
      * @return True if ready, false if otherwise.
      */
     public boolean isReady() {
-        return isReady && ws != null;
+        return isReady /* && ws != null */ ;
     }
 
     /**
@@ -633,5 +666,9 @@ public final class DiscordClient {
 
     public String getCDN() {
         return cdn;
+    }
+
+    public boolean isSuspended() {
+        return suspended;
     }
 }

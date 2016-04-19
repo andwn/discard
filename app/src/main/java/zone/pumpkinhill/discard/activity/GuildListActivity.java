@@ -70,12 +70,12 @@ public class GuildListActivity extends AppCompatActivity {
         }
     }
 
-    @EventSubscriber
-    public void onDisconnect(DiscordDisconnectedEvent event) {
-        Log.i("onDisconnect", "Disconnected, back to login.");
-        ClientHelper.abandonClient();
-        finish();
-    }
+    //@EventSubscriber
+    //public void onDisconnect(DiscordDisconnectedEvent event) {
+    //    Log.i("onDisconnect", "Disconnected, back to login.");
+    //    ClientHelper.abandonClient();
+    //    finish();
+    //}
 
     //@EventSubscriber
     //public void onMessage(MessageReceivedEvent event) {

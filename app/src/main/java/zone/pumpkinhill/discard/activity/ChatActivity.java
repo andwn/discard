@@ -61,7 +61,7 @@ public class ChatActivity extends AppCompatActivity {
             ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageResource(R.drawable.ic_menu_camera);
             TextView drName = (TextView) findViewById(R.id.guildName);
-            drName.setText("Private Messages");
+            drName.setText("Direct Messages");
             TextView drNotify = (TextView) findViewById(R.id.notifyCount);
             drNotify.setText("");
             // Setup adapter for text channel list
@@ -185,12 +185,12 @@ public class ChatActivity extends AppCompatActivity {
         //ClientHelper.fillChatMessages(channel.getMessages());
     }
 */
-    @EventSubscriber
-    public void onDisconnect(DiscordDisconnectedEvent event) {
-        System.out.println("Disconnected event");
-        ClientHelper.abandonClient();
-        finish();
-    }
+    //@EventSubscriber
+    //public void onDisconnect(DiscordDisconnectedEvent event) {
+    //    System.out.println("Disconnected event");
+    //    ClientHelper.abandonClient();
+    //    finish();
+    //}
 
     @EventSubscriber
     public void onMessage(MessageReceivedEvent event) {

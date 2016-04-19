@@ -96,6 +96,7 @@ import zone.pumpkinhill.discord4droid.json.responses.events.ReadyEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.ResumedEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.TypingEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.UserUpdateEventResponse;
+import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class DiscordWS extends WebSocketAdapter {
     private final static String TAG = DiscordWS.class.getCanonicalName();
@@ -154,9 +155,9 @@ public class DiscordWS extends WebSocketAdapter {
             executorService.shutdownNow();
             socket.disconnect();
             client.ws = null;
-            clearCache();
+            if(reason != DiscordDisconnectedEvent.Reason.SUSPENDED &&
+                    reason != DiscordDisconnectedEvent.Reason.UNKNOWN) clearCache();
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            //Thread.currentThread().interrupt();
         }
     }
 
@@ -422,19 +423,21 @@ public class DiscordWS extends WebSocketAdapter {
         client.isReady = true;
 
         // I hope you like loops.
-        for (GuildResponse guildResponse : event.guilds) {
-            if (guildResponse.unavailable) { //Guild can't be reached, so we ignore it
-                Log.w(TAG, "Guild with id "+guildResponse.id+" is unavailable, ignoring it.");
-                continue;
-            }
+        if(client.getGuilds().isEmpty()) { // If the guild list is populated we are probably reconnecting
+            for (GuildResponse guildResponse : event.guilds) {
+                if (guildResponse.unavailable) { //Guild can't be reached, so we ignore it
+                    Log.w(TAG, "Guild with id " + guildResponse.id + " is unavailable, ignoring it.");
+                    continue;
+                }
 
-            Guild guild = DiscordUtils.getGuildFromJSON(client, guildResponse);
-            if (guild != null)
-                client.guildList.add(guild);
-        }
-        for (PrivateChannelResponse privateChannelResponse : event.private_channels) {
-            PrivateChannel channel = DiscordUtils.getPrivateChannelFromJSON(client, privateChannelResponse);
-            client.privateChannels.add(channel);
+                Guild guild = DiscordUtils.getGuildFromJSON(client, guildResponse);
+                if (guild != null)
+                    client.guildList.add(guild);
+            }
+            for (PrivateChannelResponse privateChannelResponse : event.private_channels) {
+                PrivateChannel channel = DiscordUtils.getPrivateChannelFromJSON(client, privateChannelResponse);
+                client.privateChannels.add(channel);
+            }
         }
         for (ReadyEventResponse.ReadStateResponse readState : event.read_state) {
             Channel channel = client.getChannelByID(readState.id);
@@ -873,14 +876,14 @@ public class DiscordWS extends WebSocketAdapter {
     @Override
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
         super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
-        disconnect(DiscordDisconnectedEvent.Reason.UNKNOWN);
+        if(!client.isSuspended()) disconnect(DiscordDisconnectedEvent.Reason.UNKNOWN);
     }
 
     @Override
     public void onError(WebSocket websocket, WebSocketException cause) throws Exception {
         super.onError(websocket, cause);
         cause.printStackTrace();
-        disconnect(DiscordDisconnectedEvent.Reason.UNKNOWN);
+        //disconnect(DiscordDisconnectedEvent.Reason.UNKNOWN);
     }
 
     /**

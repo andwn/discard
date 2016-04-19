@@ -32,8 +32,16 @@ public class UpdatePresenceTask extends AsyncTask<String, Void, Boolean> {
         DiscordClient client = ClientHelper.client;
         User us = client.getOurUser();
         if(us == null) return false;
+        if(mPresence != null && !mPresence) {
+            try {
+                client.resume();
+            } catch(DiscordException e) {
+                Log.e("DiscordService", "Error resuming websocket: " + e);
+            }
+        }
         client.updatePresence(mPresence == null ? us.getPresence() == Presences.IDLE : mPresence,
                 mGame == null ? us.getGame() : mGame);
+        if(mPresence != null && mPresence) client.suspend();
         return true;
     }
 
