@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -21,9 +22,10 @@ import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 
 public class GuildListActivity extends AppCompatActivity {
-    private List<Guild> mGuilds;
+    private final static String TAG = GuildListActivity.class.getCanonicalName();
 
     private Context mContext = this;
+    private List<Guild> mGuilds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,25 +33,32 @@ public class GuildListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_guild_list);
         ClientHelper.subscribe(this);
         ListView guildList = (ListView) findViewById(R.id.guildList);
+        if(guildList == null) {
+            Log.e(TAG, "Couldn't find guildList view.");
+            return;
+        }
         guildList.setOnItemClickListener(new ListView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View v, int position, long idk) {
-                Intent i = new Intent(mContext, ChatActivity.class);
                 Bundle b = new Bundle();
                 b.putString("guildId", String.valueOf(adapter.getItemIdAtPosition(position)));
+                Intent i = new Intent(mContext, ChatActivity.class);
                 i.putExtras(b);
                 startActivity(i);
-                ClientHelper.unsubscribe(this);
             }
         });
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        ClientHelper.unsubscribe(this);
+    }
+
     @EventSubscriber
     public void onReady(ReadyEvent event) {
-        //new EventSetupTask().execute();
         DiscordClient client = event.getClient();
-        List<Guild> guilds = client.getGuilds();
-        this.mGuilds = guilds;
+        mGuilds = client.getGuilds();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -67,19 +76,4 @@ public class GuildListActivity extends AppCompatActivity {
             new UpdatePresenceTask(null, "Android Studio").execute();
         }
     }
-
-    //@EventSubscriber
-    //public void onDisconnect(DiscordDisconnectedEvent event) {
-    //    Log.i("onDisconnect", "Disconnected, back to login.");
-    //    ClientHelper.abandonClient();
-    //    finish();
-    //}
-
-    //@EventSubscriber
-    //public void onMessage(MessageReceivedEvent event) {
-    //    Message message = event.getMessage();
-        //ClientHelper.newChatMessage(message.getChannel().getID(), message);
-        //ListView msgList = (ListView) findViewById(R.id.chatMessages);
-
-    //}
 }

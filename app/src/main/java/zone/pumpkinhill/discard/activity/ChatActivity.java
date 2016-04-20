@@ -35,23 +35,22 @@ import zone.pumpkinhill.discord4droid.util.MessageList;
 public class ChatActivity extends AppCompatActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
 
+    private Context mContext = this;
     private Guild mGuild;
     private Channel mChannel;
-    private ListView mMessageList;
-
-    private Context mContext = this;
+    private ListView mMessageView;
+    private MessageList.MessageListEventListener mMessageListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         ClientHelper.subscribe(this);
-        DiscordClient client = ClientHelper.client;
         String guildId = getIntent().getExtras().getString("guildId");
         if(guildId == null || guildId.equals("0")) {
             // Private chat
             ArrayList<PrivateChannel> channelList = new ArrayList<>();
-            for(Channel c : client.getChannels(true)) {
+            for(Channel c : ClientHelper.client.getChannels(true)) {
                 if(!(c instanceof PrivateChannel)) continue;
                 if(mChannel == null) mChannel = c;
                 channelList.add((PrivateChannel) c);
@@ -61,7 +60,6 @@ public class ChatActivity extends AppCompatActivity {
                 finish();
                 return;
             }
-            setTitle(mChannel.getName());
             // Setup drawer
             ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageResource(R.drawable.ic_menu_camera);
@@ -76,15 +74,12 @@ public class ChatActivity extends AppCompatActivity {
             textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    ListView messages = (ListView) findViewById(R.id.messageListView);
-                    mChannel = (Channel) parent.getAdapter().getItem(position);
-                    messages.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-                    setTitle(mChannel.getName());
+                    switchChannel((Channel) parent.getAdapter().getItem(position));
                 }
             });
         } else {
             // Guild
-            mGuild = client.getGuildByID(guildId);
+            mGuild = ClientHelper.client.getGuildByID(guildId);
             if (mGuild == null) {
                 Log.e(TAG, "Something went wrong passing the guild ID to chat activity.");
                 finish();
@@ -106,24 +101,16 @@ public class ChatActivity extends AppCompatActivity {
             textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    ListView messages = (ListView) findViewById(R.id.messageListView);
-                    mChannel = (Channel) parent.getAdapter().getItem(position);
-                    messages.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-                    setTitle(mChannel.getName());
+                    switchChannel((Channel) parent.getAdapter().getItem(position));
                 }
             });
-            // Setup adapter for text channel list
+            // Setup adapter for voice channel list
             ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
         }
         // Fill in message list
-        mMessageList = (ListView) findViewById(R.id.messageListView);
-        if(mMessageList != null) {
-            mMessageList.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-            new LoadMessagesTask(mChannel.getMessages(), mMessageList).execute();
-            ClientHelper.client.getDispatcher().registerListener(
-                    new MessageList.MessageListEventListener(mChannel.getMessages()));
-        }
+        mMessageView = (ListView) findViewById(R.id.messageListView);
+        if(mMessageView != null) switchChannel(mChannel);
         Button sendButton = (Button) findViewById(R.id.sendButton);
         if(sendButton != null) {
             sendButton.setOnClickListener(new View.OnClickListener() {
@@ -131,74 +118,29 @@ public class ChatActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     EditText msg = (EditText) findViewById(R.id.editMessage);
                     if(msg != null && !msg.getText().toString().isEmpty()) {
-                        new SendMessageTask(msg, mMessageList).execute(mChannel.getID());
+                        new SendMessageTask(msg, mMessageView).execute(mChannel.getID());
                     }
                 }
             });
         }
     }
-/*
-    View.OnClickListener openGuildsDrawer = new View.OnClickListener() {
-        public void onClick(View v) {
-            Log.d("openGuildsDrawer", "I have been called.");
-            mGuildsDrawer.openDrawer(Gravity.LEFT);
-            //Intent i = new Intent(getApplicationContext(), GuildsDrawerActivity.class);
-            //startActivity(i);
-        }
-    };
-*/
-    /*
-    @EventSubscriber
-    public void onReady(ReadyEvent event) {
-        DiscordClient client = event.getClient();
-        User ourUser = client.getOurUser();
-        Guild guild = client.getGuilds().get(0);
-        //System.out.println("Logged in as " + ourUser.getName());
-        if(guild == null) {
-            System.out.println("Not a member of any guilds.");
-            return;
-        }
-        System.out.println("Current guild: " + guild.getName());
-        Channel channel = guild.getChannels().get(0);
-        if(channel == null) {
-            System.out.println("This guild has no channels.");
-            return;
-        }
-        System.out.println("Current channel: " + channel.getName() + " (" + channel.getID() + ")");
-        this.mChannel = channel;
-        // Toast makes the app crash...
-        //Toast.makeText(getBaseContext(), "Logged in as " + ourUser.getName(), Toast.LENGTH_SHORT).show();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // Fill in action bar
-                    ActionBar bar = getSupportActionBar();
-                    bar.setDisplayShowHomeEnabled(false);
-                    View barView = getLayoutInflater().inflate(R.layout.action_bar, null);
-                    barView.findViewById(R.id.guildsButton).setOnClickListener(openGuildsDrawer);
-                    ((TextView)barView.findViewById(R.id.titleText)).setText(mChannel.getName());
-                    bar.setCustomView(barView);
-                    bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
-                    // Fill in message list
-                    ListView msgList = (ListView) findViewById(R.id.messageListView);
-                    if(msgList == null) return;
-                    msgList.setAdapter(new ChatMessageAdapter(getApplicationContext(),
-                            mChannel.getID(), mChannel.getMessages()));
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        //ClientHelper.fillChatMessages(channel.getMessages());
+
+    private void switchChannel(Channel newChannel) {
+        mChannel = newChannel;
+        mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
+        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute();
+        ClientHelper.unsubscribe(mMessageListener);
+        mMessageListener = new MessageList.MessageListEventListener(mChannel.getMessages());
+        ClientHelper.subscribe(mMessageListener);
+        setTitle(mChannel.getName());
     }
-*/
-    //@EventSubscriber
-    //public void onDisconnect(DiscordDisconnectedEvent event) {
-    //    System.out.println("Disconnected event");
-    //    ClientHelper.abandonClient();
-    //    finish();
-    //}
+
+    @Override
+    public void finish() {
+        super.finish();
+        ClientHelper.unsubscribe(this);
+        ClientHelper.unsubscribe(mMessageListener);
+    }
 
     @EventSubscriber
     public void onMessage(MessageReceivedEvent event) {
@@ -213,8 +155,5 @@ public class ChatActivity extends AppCompatActivity {
                 }
             });
         }
-        //ClientHelper.newChatMessage(message.getChannel().getID(), message);
-        //ListView msgList = (ListView) findViewById(R.id.chatMessages);
-
     }
 }

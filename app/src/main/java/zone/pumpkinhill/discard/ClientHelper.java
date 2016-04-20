@@ -64,10 +64,12 @@ public class ClientHelper {
         mDispatcher = null;
     }
     public static void subscribe(Object subscriber) {
+        if(subscriber == null) return;
         mSubscribers.add(subscriber);
         if(mDispatcher != null) mDispatcher.registerListener(subscriber);
     }
     public static void unsubscribe(Object subscriber) {
+        if(subscriber == null) return;
         mSubscribers.remove(subscriber);
         mDispatcher.unregisterListener(subscriber);
     }

@@ -63,11 +63,6 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
     private final Channel channel;
 
     /**
-     * The event listener for this list instance. This is used to update the list when messages are received/removed/etc.
-     */
-    //private final MessageListEventListener listener;
-
-    /**
      * This is true if the client object has permission to read this channel's messages.
      */
     private volatile boolean hasPermission;
@@ -89,21 +84,6 @@ public class MessageList extends AbstractList<Message> implements List<Message> 
         this.client = client;
         this.channel = channel;
         updatePermissions();
-        //client.getDispatcher().registerListener(new MessageListEventListener(this));
-    }
-
-    /**
-     * @param client The client for this list to respect.
-     * @param channel The channel to retrieve messages from.
-     * @param initialContents The initial amount of messages to have cached when this list is constructed.
-     */
-    public MessageList(DiscordClient client, Channel channel, int initialContents) {
-        this(client, channel);
-        try {
-            load(initialContents);
-        } catch (HTTP429Exception e) {
-            Log.e(TAG, "Error creating message list: " + e);
-        }
     }
 
     /**

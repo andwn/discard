@@ -120,18 +120,11 @@ public class ChatMessageAdapter extends BaseAdapter {
         ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
         if(msg.getAttachments().size() >= 1) {
             String attURL = msg.getAttachments().get(0).getUrl();
-            Log.v(TAG, "Attachment URL: " + attURL);
             if (isImageFilename(attURL)) {
-                Bitmap bmp = ClientHelper.getImageFromCache(attURL);
-                if (bmp == null) {
-                    // Bitmap not cached and needs to download, load in background
-                    new ImageDownloaderTask(attachment).execute(attURL);
-                } else {
-                    attachment.setImageBitmap(bmp);
-                }
+                enableImageView(attachment, attURL);
             } else {
                 Log.w(TAG, "Unknown attachment file type: " + attURL);
-                attachment.setImageResource(android.R.drawable.stat_notify_error);
+                disableImageView(attachment);
             }
         } else { // Links
             String[] links = extractLinks(msg.getContent());
@@ -139,22 +132,16 @@ public class ChatMessageAdapter extends BaseAdapter {
                 boolean anyImages = false;
                 for(String link : links) {
                     if(isImageFilename(link)) {
-                        Bitmap bmp = ClientHelper.getImageFromCache(link);
-                        if (bmp == null) {
-                            // Bitmap not cached and needs to download, load in background
-                            new ImageDownloaderTask(attachment).execute(link);
-                        } else {
-                            attachment.setImageBitmap(bmp);
-                        }
+                        enableImageView(attachment, link);
                         anyImages = true;
                         break;
                     }
                 }
                 if(!anyImages) {
-                    attachment.setImageResource(android.R.color.transparent);
+                    disableImageView(attachment);
                 }
             } else {
-                attachment.setImageResource(android.R.color.transparent);
+                disableImageView(attachment);
             }
         }
         return view;
@@ -168,7 +155,6 @@ public class ChatMessageAdapter extends BaseAdapter {
             Log.v(TAG, "URL extracted: " + url);
             links.add(url);
         }
-
         return links.toArray(new String[links.size()]);
     }
 
@@ -177,6 +163,21 @@ public class ChatMessageAdapter extends BaseAdapter {
                 text.toLowerCase().endsWith(".jpeg") ||
                 text.toLowerCase().endsWith(".png") ||
                 text.toLowerCase().endsWith(".gif");
+    }
+
+    private static void enableImageView(ImageView view, String url) {
+        Bitmap bmp = ClientHelper.getImageFromCache(url);
+        if (bmp == null) {
+            // Bitmap not cached and needs to download, load in background
+            new ImageDownloaderTask(view).execute(url);
+        } else {
+            view.setImageBitmap(bmp);
+        }
+    }
+
+    private static void disableImageView(ImageView view) {
+        view.setImageResource(android.R.color.transparent);
+        view.setEnabled(false);
     }
 
     @Override
