@@ -13,6 +13,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
@@ -23,13 +24,24 @@ import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
 import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
+import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
+import zone.pumpkinhill.discord4droid.handle.events.ChannelDeleteEvent;
+import zone.pumpkinhill.discord4droid.handle.events.ChannelUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.DiscordDisconnectedEvent;
+import zone.pumpkinhill.discord4droid.handle.events.GuildLeaveEvent;
+import zone.pumpkinhill.discord4droid.handle.events.GuildTransferOwnershipEvent;
+import zone.pumpkinhill.discord4droid.handle.events.GuildUpdateEvent;
+import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
+import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
+import zone.pumpkinhill.discord4droid.handle.events.RoleUpdateEvent;
+import zone.pumpkinhill.discord4droid.handle.events.UserRoleUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
+import zone.pumpkinhill.discord4droid.handle.obj.Role;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatActivity extends AppCompatActivity {
@@ -37,9 +49,12 @@ public class ChatActivity extends AppCompatActivity {
 
     private Context mContext = this;
     private Guild mGuild;
+    private List<Channel> mChannelList;
     private Channel mChannel;
     private ListView mMessageView;
-    private MessageList.MessageListEventListener mMessageListener;
+    private boolean mIsPrivate;
+
+    private Event mEvent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,14 +64,9 @@ public class ChatActivity extends AppCompatActivity {
         String guildId = getIntent().getExtras().getString("guildId");
         if(guildId == null || guildId.equals("0")) {
             // Private chat
-            ArrayList<PrivateChannel> channelList = new ArrayList<>();
-            for(Channel c : ClientHelper.client.getChannels(true)) {
-                if(!(c instanceof PrivateChannel)) continue;
-                if(mChannel == null) mChannel = c;
-                channelList.add((PrivateChannel) c);
-            }
-            if(mChannel == null) {
-                // No private channels
+            mIsPrivate = true;
+            mChannelList = getPrivateChannels();
+            if(mChannelList.size() == 0) { // No private channels
                 finish();
                 return;
             }
@@ -69,7 +79,7 @@ public class ChatActivity extends AppCompatActivity {
             drNotify.setText("");
             // Setup adapter for text channel list
             ListView textChannels = (ListView) findViewById(R.id.textChannelList);
-            textChannels.setAdapter(new PrivateChannelAdapter(mContext, channelList));
+            textChannels.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
             // Setup onItemClick for text channel list
             textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
@@ -79,14 +89,14 @@ public class ChatActivity extends AppCompatActivity {
             });
         } else {
             // Guild
+            mIsPrivate = false;
             mGuild = ClientHelper.client.getGuildByID(guildId);
             if (mGuild == null) {
                 Log.e(TAG, "Something went wrong passing the guild ID to chat activity.");
                 finish();
                 return;
             }
-            setTitle(mGuild.getName());
-            mChannel = mGuild.getChannels().get(0);
+            mChannelList = mGuild.getChannels();
             // Drawer
             ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageBitmap(ClientHelper.getImageFromCache(mGuild.getIconURL()));
@@ -109,6 +119,7 @@ public class ChatActivity extends AppCompatActivity {
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
         }
         // Fill in message list
+        if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
         Button sendButton = (Button) findViewById(R.id.sendButton);
@@ -125,13 +136,20 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+    private List<Channel> getPrivateChannels() {
+        List<Channel> channelList = new ArrayList<>();
+        for(Channel c : ClientHelper.client.getChannels(true)) {
+            if(!(c instanceof PrivateChannel)) continue;
+            if(mChannel == null) mChannel = c;
+            channelList.add(c);
+        }
+        return channelList;
+    }
+
     private void switchChannel(Channel newChannel) {
         mChannel = newChannel;
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute();
-        ClientHelper.unsubscribe(mMessageListener);
-        mMessageListener = new MessageList.MessageListEventListener(mChannel.getMessages());
-        ClientHelper.subscribe(mMessageListener);
+        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute(mChannel.getID());
         setTitle(mChannel.getName());
     }
 
@@ -139,21 +157,44 @@ public class ChatActivity extends AppCompatActivity {
     public void finish() {
         super.finish();
         ClientHelper.unsubscribe(this);
-        ClientHelper.unsubscribe(mMessageListener);
     }
 
     @EventSubscriber
-    public void onMessage(MessageReceivedEvent event) {
-        Message message = event.getMessage();
-        if(message.getChannel().getID().equals(mChannel.getID())) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    ListView msgList = (ListView) findViewById(R.id.messageListView);
-                    Log.v(TAG, "Refreshing list adapter.");
-                    ((ChatMessageAdapter) msgList.getAdapter()).notifyDataSetChanged();
-                }
-            });
-        }
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if(!event.getMessage().getChannel().equals(mChannel)) return;
+        mEvent = event;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mChannel.getMessages().add(((MessageReceivedEvent)mEvent).getMessage());
+                ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
+            }
+        });
+    }
+
+    @EventSubscriber
+    public void onMessageSent(MessageSendEvent event) {
+        if(!event.getMessage().getChannel().equals(mChannel)) return;
+        mEvent = event;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mChannel.getMessages().add(((MessageReceivedEvent)mEvent).getMessage());
+                ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
+            }
+        });
+    }
+
+    @EventSubscriber
+    public void onMessageDelete(MessageDeleteEvent event) {
+        if(!event.getMessage().getChannel().equals(mChannel)) return;
+        mEvent = event;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mChannel.getMessages().remove(((MessageReceivedEvent)mEvent).getMessage());
+                ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
+            }
+        });
     }
 }

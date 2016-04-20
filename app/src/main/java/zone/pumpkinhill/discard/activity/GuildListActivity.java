@@ -31,7 +31,6 @@ public class GuildListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guild_list);
-        ClientHelper.subscribe(this);
         ListView guildList = (ListView) findViewById(R.id.guildList);
         if(guildList == null) {
             Log.e(TAG, "Couldn't find guildList view.");
@@ -47,18 +46,15 @@ public class GuildListActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+        if(ClientHelper.isReady()) {
+
+        } else {
+            ClientHelper.subscribe(this);
+        }
     }
 
-    @Override
-    public void finish() {
-        super.finish();
-        ClientHelper.unsubscribe(this);
-    }
-
-    @EventSubscriber
-    public void onReady(ReadyEvent event) {
-        DiscordClient client = event.getClient();
-        mGuilds = client.getGuilds();
+    private void populateTable() {
+        mGuilds = ClientHelper.client.getGuilds();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -75,5 +71,16 @@ public class GuildListActivity extends AppCompatActivity {
         if(BuildConfig.DEBUG) {
             new UpdatePresenceTask(null, "Android Studio").execute();
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        ClientHelper.unsubscribe(this);
+    }
+
+    @EventSubscriber
+    public void onReady(ReadyEvent event) {
+        populateTable();
     }
 }

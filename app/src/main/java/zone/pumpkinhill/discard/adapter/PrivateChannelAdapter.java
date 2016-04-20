@@ -10,17 +10,19 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
+import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class PrivateChannelAdapter extends BaseAdapter {
-    private ArrayList<PrivateChannel> mChannels;
+    private List<Channel> mChannels;
     private LayoutInflater mInflater;
 
-    public PrivateChannelAdapter(Context context, ArrayList<PrivateChannel> channels) {
+    public PrivateChannelAdapter(Context context, List<Channel> channels) {
         mChannels = channels;
         mInflater = LayoutInflater.from(context);
     }
@@ -63,7 +65,7 @@ public class PrivateChannelAdapter extends BaseAdapter {
         if (convertView == null) {
             view = mInflater.inflate(R.layout.list_item_guild, parent, false);
         }
-        PrivateChannel channel = mChannels.get(position);
+        PrivateChannel channel = (PrivateChannel)mChannels.get(position);
         // Try loading message author's avatar from cache, or start to download it
         ImageView icon = (ImageView) view.findViewById(R.id.guildIcon);
         String iconURL = channel.getRecipient().getAvatarURL();

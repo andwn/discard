@@ -27,8 +27,8 @@ public class ClientHelper {
         client.login();
         initDispatcher();
     }
-    public static boolean isLoggedIn() {
-        return client != null;
+    public static boolean isReady() {
+        return client != null && client.isReady();
     }
     public static User ourUser() {
         return client.getOurUser();

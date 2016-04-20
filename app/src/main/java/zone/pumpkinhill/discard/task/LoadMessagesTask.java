@@ -1,5 +1,6 @@
 package zone.pumpkinhill.discard.task;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.EditText;
@@ -21,6 +22,8 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
     private final WeakReference<ListView> mChatView;
     private final MessageList mMessageList;
 
+    private MessageList mTempList;
+
     public LoadMessagesTask(MessageList messageList, ListView chatView) {
         mChatView = new WeakReference<>(chatView);
         mMessageList = messageList;
@@ -28,7 +31,8 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
 
     protected Boolean doInBackground(String... params) {
         try {
-            mMessageList.load(MessageList.MESSAGE_CHUNK_COUNT);
+            mTempList = new MessageList(ClientHelper.client, ClientHelper.client.getChannelByID(params[0]));
+            mTempList.load(MessageList.MESSAGE_CHUNK_COUNT);
             return true;
         } catch(HTTP429Exception e) {
             Log.e(TAG, "Error fetching latest messages: " + e);
@@ -42,6 +46,7 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
             // On success refresh chat
             if(cb != null) {
                 Log.v(TAG, "Refreshing list adapter.");
+                mMessageList.addAll(mTempList);
                 ((ChatMessageAdapter) cb.getAdapter()).notifyDataSetChanged();
             }
         } else {

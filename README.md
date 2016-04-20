@@ -16,23 +16,6 @@ Coming soon(tm)
 - Less memes
 - None of my friends use Mumble
 
-### TODO List
-- [x] Text communication
-- [x] Private messages
-- [ ] Voice communication
-- [ ] Sending images
-- [ ] Dark theme
-- [ ] Proper navigation/disconnect handling
-- [ ] Speed up login time
-- [ ] Send/Receive invites
-- [ ] Server management (kick/mod)
-- [ ] User management (change name/avatar)
-- [ ] Client Preferences
-- [ ] Notifications
-- [ ] User profile cards
-- [ ] Friends list
-- [ ] Markdown
-
 ### Licenses
 Except where explicitly stated in individual files/directories
 - Discard App: GPLv3+

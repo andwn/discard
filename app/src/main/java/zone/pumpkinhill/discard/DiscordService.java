@@ -27,7 +27,7 @@ public class DiscordService extends Service {
     @Override
     public void onStart(Intent intent, int startId) {
         boolean screenOn = intent.getBooleanExtra("screen_state", false);
-        if(ClientHelper.isLoggedIn()) {
+        if(ClientHelper.isReady()) {
             new UpdatePresenceTask(screenOn, null).execute();
         }
     }
