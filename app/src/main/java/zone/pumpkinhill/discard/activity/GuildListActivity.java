@@ -47,7 +47,7 @@ public class GuildListActivity extends AppCompatActivity {
             }
         });
         if(ClientHelper.isReady()) {
-
+            populateTable();
         } else {
             ClientHelper.subscribe(this);
         }
@@ -82,5 +82,6 @@ public class GuildListActivity extends AppCompatActivity {
     @EventSubscriber
     public void onReady(ReadyEvent event) {
         populateTable();
+        ClientHelper.unsubscribe(this);
     }
 }

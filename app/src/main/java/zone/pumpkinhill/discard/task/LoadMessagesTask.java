@@ -11,6 +11,7 @@ import java.lang.ref.WeakReference;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
+import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 import zone.pumpkinhill.discord4droid.util.MessageList;
@@ -21,10 +22,12 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
 
     private final WeakReference<ListView> mChatView;
     private final MessageList mMessageList;
+    private final Context mContext;
 
     private MessageList mTempList;
 
-    public LoadMessagesTask(MessageList messageList, ListView chatView) {
+    public LoadMessagesTask(Context context, MessageList messageList, ListView chatView) {
+        mContext = context;
         mChatView = new WeakReference<>(chatView);
         mMessageList = messageList;
     }
@@ -46,7 +49,8 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
             // On success refresh chat
             if(cb != null) {
                 Log.v(TAG, "Refreshing list adapter.");
-                mMessageList.addAll(mTempList);
+                mMessageList.addAll(mTempList.reverse());
+                Log.d("LMT", mMessageList.get(0).getContent() + "\n" + mMessageList.get(1).getContent());
                 ((ChatMessageAdapter) cb.getAdapter()).notifyDataSetChanged();
             }
         } else {

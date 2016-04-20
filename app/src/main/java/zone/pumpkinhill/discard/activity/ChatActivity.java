@@ -35,6 +35,7 @@ import zone.pumpkinhill.discord4droid.handle.events.GuildUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
+import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.events.RoleUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.UserRoleUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
@@ -149,7 +150,7 @@ public class ChatActivity extends AppCompatActivity {
     private void switchChannel(Channel newChannel) {
         mChannel = newChannel;
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute(mChannel.getID());
+        new LoadMessagesTask(mContext, mChannel.getMessages(), mMessageView).execute(mChannel.getID());
         setTitle(mChannel.getName());
     }
 
@@ -194,6 +195,17 @@ public class ChatActivity extends AppCompatActivity {
             public void run() {
                 mChannel.getMessages().remove(((MessageReceivedEvent)mEvent).getMessage());
                 ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
+            }
+        });
+    }
+
+    // This is to refresh the channel after resuming from suspend (and reconnecting websocket)
+    @EventSubscriber
+    public void onReady(ReadyEvent event) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                switchChannel(mChannel);
             }
         });
     }

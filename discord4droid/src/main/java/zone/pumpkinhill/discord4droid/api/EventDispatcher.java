@@ -75,7 +75,6 @@ public class EventDispatcher {
         if (client.isReady()) {
             Log.d(TAG, "Dispatching event of type " + event.getClass().getSimpleName());
             event.client = client;
-
             for(Entry<Class<?>, ConcurrentHashMap<Method, CopyOnWriteArrayList<Object>>> en : methodListeners.entrySet()) {
                 if(!en.getKey().isAssignableFrom(event.getClass())) continue;
                 for(Entry<Method, CopyOnWriteArrayList<Object>> m : en.getValue().entrySet()) {
@@ -87,6 +86,7 @@ public class EventDispatcher {
                             Log.e(TAG, "Error dispatching event " + event.getClass().getSimpleName() + e);
                         } catch (InvocationTargetException e) {
                             Log.e(TAG, "Error dispatching event " + event.getClass().getSimpleName() + e);
+                            e.printStackTrace();
                         } catch (Exception e) {
                             Log.e(TAG, "Unhandled exception caught dispatching event " + event.getClass().getSimpleName() + e);
                         }
