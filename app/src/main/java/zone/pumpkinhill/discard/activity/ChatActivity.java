@@ -150,7 +150,7 @@ public class ChatActivity extends AppCompatActivity {
     private void switchChannel(Channel newChannel) {
         mChannel = newChannel;
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new LoadMessagesTask(mContext, mChannel.getMessages(), mMessageView).execute(mChannel.getID());
+        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute(mChannel.getID());
         setTitle(mChannel.getName());
     }
 

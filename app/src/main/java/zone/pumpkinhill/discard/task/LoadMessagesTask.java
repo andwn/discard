@@ -22,12 +22,10 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
 
     private final WeakReference<ListView> mChatView;
     private final MessageList mMessageList;
-    private final Context mContext;
 
     private MessageList mTempList;
 
-    public LoadMessagesTask(Context context, MessageList messageList, ListView chatView) {
-        mContext = context;
+    public LoadMessagesTask(MessageList messageList, ListView chatView) {
         mChatView = new WeakReference<>(chatView);
         mMessageList = messageList;
     }
@@ -50,7 +48,6 @@ public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
             if(cb != null) {
                 Log.v(TAG, "Refreshing list adapter.");
                 mMessageList.addAll(mTempList.reverse());
-                Log.d("LMT", mMessageList.get(0).getContent() + "\n" + mMessageList.get(1).getContent());
                 ((ChatMessageAdapter) cb.getAdapter()).notifyDataSetChanged();
             }
         } else {
