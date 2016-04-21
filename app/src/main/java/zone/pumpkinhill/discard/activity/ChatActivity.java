@@ -180,7 +180,7 @@ public class ChatActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mChannel.getMessages().add(((MessageReceivedEvent)mEvent).getMessage());
+                mChannel.getMessages().add(((MessageSendEvent)mEvent).getMessage());
                 ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
             }
         });
@@ -193,7 +193,7 @@ public class ChatActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mChannel.getMessages().remove(((MessageReceivedEvent)mEvent).getMessage());
+                mChannel.getMessages().remove(((MessageDeleteEvent)mEvent).getMessage());
                 ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
             }
         });
