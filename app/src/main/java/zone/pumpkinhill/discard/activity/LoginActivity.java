@@ -3,7 +3,9 @@ package zone.pumpkinhill.discard.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,12 +13,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.securepreferences.SecurePreferences;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.DiscordService;
@@ -24,11 +31,15 @@ import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class LoginActivity extends AppCompatActivity {
+    private final static String TAG = LoginActivity.class.getCanonicalName();
+
+    private final Context mContext = this;
     private UserLoginTask mAuthTask = null;
-    // UI references.
+
     private EditText mServerView;
     private EditText mEmailView;
     private EditText mPasswordView;
+    private CheckBox mRememberView;
     private View mProgressView;
     private View mLoginFormView;
 
@@ -40,6 +51,7 @@ public class LoginActivity extends AppCompatActivity {
         mServerView = (EditText) findViewById(R.id.server);
         mEmailView = (EditText) findViewById(R.id.email);
         mPasswordView = (EditText) findViewById(R.id.password);
+        mRememberView = (CheckBox) findViewById(R.id.remember);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -68,9 +80,27 @@ public class LoginActivity extends AppCompatActivity {
         getApplicationContext().startService(i);
     }
 
-    private void populateAutoComplete() {
-        // TODO: Save credentials after successful login, then load them here next startup
+    private void saveCredentials() {
+        SharedPreferences prefs = new SecurePreferences(this);
+        String server = prefs.getString("server", mServerView.getText().toString());
+        String email = prefs.getString("email", mEmailView.getText().toString());
+        String password = prefs.getString("password", mPasswordView.getText().toString());
+        prefs.edit().putString("server", server)
+                .putString("email", email)
+                .putString("password", password)
+                .putBoolean("remember", true)
+                .apply();
+    }
 
+    private void populateAutoComplete() {
+        SharedPreferences prefs = new SecurePreferences(this);
+        if(!prefs.getBoolean("remember", false)) return;
+        String server = prefs.getString("server", mServerView.getText().toString());
+        String email = prefs.getString("email", "");
+        String password = prefs.getString("password", "");
+        mServerView.setText(server);
+        mEmailView.setText(email);
+        mPasswordView.setText(password);
     }
 
     /**
@@ -187,7 +217,7 @@ public class LoginActivity extends AppCompatActivity {
                 ClientHelper.login(mEmail, mPassword, mServer);
                 return true;
             } catch(DiscordException e) {
-                Log.e("Login", e.getErrorMessage());
+                Log.e(TAG, e.getErrorMessage());
                 return false;
             }
         }
@@ -198,7 +228,8 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
 
             if (success) {
-                Intent i = new Intent(getApplicationContext(), GuildListActivity.class);
+                if(mRememberView.isChecked()) saveCredentials();
+                Intent i = new Intent(mContext, GuildListActivity.class);
                 startActivity(i);
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
@@ -211,6 +242,20 @@ public class LoginActivity extends AppCompatActivity {
             mAuthTask = null;
             showProgress(false);
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.options_menu, menu);
+        menu.findItem(R.id.menu_preferences).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                Intent i = new Intent(mContext, SettingsActivity.class);
+                startActivity(i);
+                return true;
+            }
+        });
+        return super.onCreateOptionsMenu(menu);
     }
 }
 

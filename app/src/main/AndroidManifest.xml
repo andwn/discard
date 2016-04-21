@@ -19,15 +19,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.GuildListActivity"
+        <activity
+            android:name=".activity.GuildListActivity"
             android:configChanges="orientation|keyboardHidden|screenSize" />
-        <activity android:name=".activity.ChatActivity"
+        <activity
+            android:name=".activity.ChatActivity"
             android:configChanges="orientation|keyboardHidden|screenSize" />
 
         <service
             android:name=".DiscordService"
             android:enabled="true"
             android:exported="true" />
+
+        <activity
+            android:name=".activity.SettingsActivity"
+            android:label="@string/title_activity_preferences"></activity>
     </application>
 
 </manifest>

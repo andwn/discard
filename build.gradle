@@ -15,6 +15,12 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        ivy {
+            url 'https://downloads.xiph.org/releases/'
+            layout 'pattern', {
+                artifact '/[organisation]/[module]-[revision].[ext]'
+            }
+        }
     }
 }
 
