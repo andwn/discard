@@ -284,6 +284,7 @@ public class DiscordUtils {
             message.setAttachments(getAttachmentsFromJSON(json));
             message.setContent(json.content);
             message.setMentionsEveryone(json.mention_everyone);
+            message.setMentionsHere(json.mention_here);
             message.setMentions(getMentionsFromJSON(json));
             message.setTimestamp(convertFromTimestamp(json.timestamp));
             message.setEditedTimestamp(json.edited_timestamp == null ? null : convertFromTimestamp(json.edited_timestamp));
@@ -292,7 +293,7 @@ public class DiscordUtils {
             return new Message(client, json.id, json.content, getUserFromJSON(client, json.author),
                     channel, convertFromTimestamp(json.timestamp),
                     json.edited_timestamp == null ? null : convertFromTimestamp(json.edited_timestamp),
-                    json.mention_everyone, getMentionsFromJSON(json), getAttachmentsFromJSON(json));
+                    json.mention_everyone, json.mention_here, getMentionsFromJSON(json), getAttachmentsFromJSON(json));
     }
 
     /**

@@ -563,7 +563,7 @@ public class DiscordWS extends WebSocketAdapter {
         if (toUpdate != null) {
             Message oldMessage = new Message(client, toUpdate.getID(), toUpdate.getContent(), toUpdate.getAuthor(),
                     toUpdate.getChannel(), toUpdate.getTimestamp(), toUpdate.getEditedTimestamp(),
-                    toUpdate.mentionsEveryone(), toUpdate.getRawMentions(), toUpdate.getAttachments());
+                    toUpdate.mentionsEveryone(), toUpdate.mentionsHere(), toUpdate.getRawMentions(), toUpdate.getAttachments());
             toUpdate = DiscordUtils.getMessageFromJSON(client, channel, event);
             client.dispatcher.dispatch(new MessageUpdateEvent(oldMessage, toUpdate));
         }

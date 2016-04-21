@@ -67,7 +67,7 @@ public class Message {
     /**
      * Whether the
      */
-    protected boolean mentionsEveryone;
+    protected boolean mentionsEveryone, mentionsHere;
 
     /**
      * The client that created this object.
@@ -76,17 +76,18 @@ public class Message {
 
     public Message(DiscordClient client, String id, String content, User user, Channel channel,
                    Date timestamp, Date editedTimestamp, boolean mentionsEveryone,
-                   List<String> mentions, List<Attachment> attachments) {
+                   boolean mentionsHere, List<String> mentions, List<Attachment> attachments) {
         this.client = client;
         this.id = id;
         this.content = content;
-        this.author = (User) user;
+        this.author = user;
         this.channel = channel;
         this.timestamp = timestamp;
         this.editedTimestamp = editedTimestamp;
         this.mentions = mentions;
         this.attachments = attachments;
         this.mentionsEveryone = mentionsEveryone;
+        this.mentionsHere = mentionsHere;
     }
 
     /**
@@ -228,7 +229,8 @@ public class Message {
                     new BasicNameValuePair("authorization", client.getToken()),
                     new BasicNameValuePair("content-type", "application/json")), MessageResponse.class);
 
-            Message oldMessage = new Message(client, this.id, this.content, author, channel, timestamp, editedTimestamp, mentionsEveryone, mentions, attachments);
+            Message oldMessage = new Message(client, this.id, this.content, author, channel, timestamp,
+                    editedTimestamp, mentionsEveryone, mentionsHere, mentions, attachments);
             DiscordUtils.getMessageFromJSON(client, channel, response);
             //Event dispatched here because otherwise there'll be an NPE as for some reason when the bot edits a message,
             // the event chain goes like this:
@@ -260,12 +262,30 @@ public class Message {
     }
 
     /**
+     * Returns whether this message mentions here.
+     *
+     * @return True if it mentions here, false if otherwise.
+     */
+    public boolean mentionsHere() {
+        return mentionsHere;
+    }
+
+    /**
      * CACHES whether the message mentions everyone.
      *
      * @param mentionsEveryone True to mention everyone false if otherwise.
      */
     public void setMentionsEveryone(boolean mentionsEveryone) {
         this.mentionsEveryone = mentionsEveryone;
+    }
+
+    /**
+     * CACHES whether the message mentions @here.
+     *
+     * @param mentionsHere True to mention @here false if otherwise.
+     */
+    public void setMentionsHere(boolean mentionsHere) {
+        this.mentionsHere = mentionsHere;
     }
 
     /**

@@ -36,6 +36,11 @@ public class MessageResponse {
     public boolean mention_everyone;
 
     /**
+     * Whether to @mention here
+     */
+    public boolean mention_here;
+
+    /**
      * The message id
      */
     public String id;
