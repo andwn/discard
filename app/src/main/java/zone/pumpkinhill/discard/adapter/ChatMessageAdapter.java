@@ -22,10 +22,7 @@ import java.util.regex.Matcher;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
-import zone.pumpkinhill.discard.task.LoadMessagesTask;
-import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
-import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatMessageAdapter extends BaseAdapter {

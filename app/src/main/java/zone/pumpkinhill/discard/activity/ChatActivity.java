@@ -23,27 +23,15 @@ import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
 import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
-import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
-import zone.pumpkinhill.discord4droid.handle.events.ChannelDeleteEvent;
-import zone.pumpkinhill.discord4droid.handle.events.ChannelUpdateEvent;
-import zone.pumpkinhill.discord4droid.handle.events.DiscordDisconnectedEvent;
-import zone.pumpkinhill.discord4droid.handle.events.GuildLeaveEvent;
-import zone.pumpkinhill.discord4droid.handle.events.GuildTransferOwnershipEvent;
-import zone.pumpkinhill.discord4droid.handle.events.GuildUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
-import zone.pumpkinhill.discord4droid.handle.events.RoleUpdateEvent;
-import zone.pumpkinhill.discord4droid.handle.events.UserRoleUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
-import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
-import zone.pumpkinhill.discord4droid.handle.obj.Role;
-import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatActivity extends AppCompatActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
@@ -63,6 +51,7 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
         ClientHelper.subscribe(this);
         String guildId = getIntent().getExtras().getString("guildId");
+        String channelId = getIntent().getExtras().getString("channelId");
         if(guildId == null || guildId.equals("0")) {
             // Private chat
             mIsPrivate = true;
@@ -98,6 +87,9 @@ public class ChatActivity extends AppCompatActivity {
                 return;
             }
             mChannelList = mGuild.getChannels();
+            if(channelId != null && !channelId.isEmpty()) {
+                mChannel = mGuild.getChannelByID(channelId);
+            }
             // Drawer
             ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageBitmap(ClientHelper.getImageFromCache(mGuild.getIconURL()));
@@ -149,6 +141,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void switchChannel(Channel newChannel) {
         mChannel = newChannel;
+        ClientHelper.setActiveChannel(newChannel);
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
         new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute(mChannel.getID());
         setTitle(mChannel.getName());
@@ -158,6 +151,7 @@ public class ChatActivity extends AppCompatActivity {
     public void finish() {
         super.finish();
         ClientHelper.unsubscribe(this);
+        ClientHelper.setActiveChannel(null);
     }
 
     @EventSubscriber

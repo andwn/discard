@@ -1,21 +1,15 @@
 package zone.pumpkinhill.discard.task;
 
-import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.EditText;
 import android.widget.ListView;
 
 import java.lang.ref.WeakReference;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
-import zone.pumpkinhill.discord4droid.handle.obj.Channel;
-import zone.pumpkinhill.discord4droid.handle.obj.Message;
-import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 import zone.pumpkinhill.discord4droid.util.MessageList;
-import zone.pumpkinhill.discord4droid.util.MissingPermissionsException;
 
 public class LoadMessagesTask extends AsyncTask<String, Void, Boolean> {
     private final static String TAG = LoadMessagesTask.class.getCanonicalName();

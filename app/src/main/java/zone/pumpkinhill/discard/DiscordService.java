@@ -5,10 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
-import android.util.Log;
 
 import zone.pumpkinhill.discard.task.UpdatePresenceTask;
-import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class DiscordService extends Service {
     public DiscordService() {

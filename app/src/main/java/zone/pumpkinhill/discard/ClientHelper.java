@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.EventDispatcher;
+import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
@@ -16,27 +17,15 @@ public class ClientHelper {
     private static EventDispatcher mDispatcher = null;
     private static ArrayList<Object> mSubscribers = new ArrayList<>();
     private static HashMap<String, Bitmap> mImageCache = new HashMap<>();
+    private static Channel mActiveChannel = null;
 
-    /**
-     * Attempts to login to discord with given credentials
-     * @throws DiscordException if login fails
-     */
+    // Login/Logout
     public static void login(String email, String password, String server) throws DiscordException {
         logout();
         client = new DiscordClient(email, password, server);
         client.login();
         initDispatcher();
     }
-    public static boolean isReady() {
-        return client != null && client.isReady();
-    }
-    public static User ourUser() {
-        return client.getOurUser();
-    }
-
-    /**
-     * Logout and delete the mClient
-     */
     public static void logout() {
         if(client != null) {
             try {
@@ -47,14 +36,16 @@ public class ClientHelper {
             }
         }
     }
+    public static boolean isReady() {
+        return client != null && client.isReady();
+    }
     public static void abandonClient() {
         if(mDispatcher != null) killDispatcher();
         client = null;
+        mActiveChannel = null;
     }
 
-    /**
-     * Events
-     */
+    // Events
     private static void initDispatcher() {
         mDispatcher = client.getDispatcher();
         for(Object o : mSubscribers) mDispatcher.registerListener(o);
@@ -74,13 +65,22 @@ public class ClientHelper {
         mDispatcher.unregisterListener(subscriber);
     }
 
-    /**
-     * Avatars
-     */
+    // Avatars
     public static Bitmap getImageFromCache(String url) {
         return mImageCache.get(url);
     }
     public static void addImageToCache(String url, Bitmap avatar) {
         mImageCache.put(url, avatar);
+    }
+
+    // User/Channel
+    public static User ourUser() {
+        return client.getOurUser();
+    }
+    public static Channel getActiveChannel() {
+        return mActiveChannel;
+    }
+    public static void setActiveChannel(Channel channel) {
+        mActiveChannel = channel;
     }
 }
