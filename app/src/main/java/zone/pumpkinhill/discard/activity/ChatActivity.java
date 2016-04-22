@@ -1,6 +1,7 @@
 package zone.pumpkinhill.discard.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -25,6 +26,7 @@ import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
+import zone.pumpkinhill.discord4droid.handle.events.GuildLeaveEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
@@ -152,6 +154,14 @@ public class ChatActivity extends AppCompatActivity {
         super.finish();
         ClientHelper.unsubscribe(this);
         ClientHelper.setActiveChannel(null);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent intent = new Intent(this,GuildListActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     @EventSubscriber

@@ -81,6 +81,14 @@ public class GuildListActivity extends AppCompatActivity {
         ClientHelper.unsubscribe(this);
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent intent = new Intent(this,LoginActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
     @EventSubscriber
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
