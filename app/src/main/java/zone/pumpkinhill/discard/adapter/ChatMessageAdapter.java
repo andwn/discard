@@ -1,7 +1,15 @@
 package zone.pumpkinhill.discard.adapter;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.os.EnvironmentCompat;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -10,7 +18,12 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -34,6 +47,7 @@ public class ChatMessageAdapter extends BaseAdapter {
             TodayFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH),
             OldFormat = new SimpleDateFormat("MMM dd hh:mm a", Locale.ENGLISH);
     private final Date mYesterday;
+    private final Context mContext;
 
     public ChatMessageAdapter(Context context, MessageList messages) {
         mMessages = messages;
@@ -44,6 +58,7 @@ public class ChatMessageAdapter extends BaseAdapter {
         cal.set(Calendar.MINUTE, 59);
         cal.set(Calendar.SECOND, 59);
         mYesterday = cal.getTime();
+        mContext = context;
     }
 
     @Override
@@ -162,7 +177,7 @@ public class ChatMessageAdapter extends BaseAdapter {
                 text.toLowerCase().endsWith(".gif");
     }
 
-    private static void enableImageView(ImageView view, String url) {
+    private void enableImageView(ImageView view, final String url) {
         Bitmap bmp = ClientHelper.getImageFromCache(url);
         if (bmp == null) {
             // Bitmap not cached and needs to download, load in background
@@ -170,6 +185,64 @@ public class ChatMessageAdapter extends BaseAdapter {
         } else {
             view.setImageBitmap(bmp);
         }
+        view.setEnabled(true);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.parse(url), "image/*");
+                mContext.startActivity(intent);
+            }
+        });
+        view.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                // Make sure SD card is mounted
+                if(!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())){
+                    Toast.makeText(mContext, "External SD card not mounted", Toast.LENGTH_LONG).show();
+                    return false;
+                }
+                // Get permission from user if we don't already have it
+                if(ActivityCompat.checkSelfPermission(
+                        mContext, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                        PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
+                            (Activity)mContext,
+                            new String[] {
+                                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            }, 1);
+                }
+                // Save to <data>/Pictures/Discard
+                File picturesDir = new File(Environment.getExternalStorageDirectory(),
+                        Environment.DIRECTORY_PICTURES);
+                File discardDir = new File(picturesDir, "Discard");
+                // Double check permissions (user denied) and make directory if it doesn't exist
+                if(!(discardDir.exists() || discardDir.mkdir())) {
+                    Toast.makeText(mContext, "Need permission", Toast.LENGTH_LONG).show();
+                    return false;
+                }
+                try {
+                    // FIXME: Change image cache to save original format and not bitmap
+                    String filename = url.substring(url.lastIndexOf("/") + 1, url.lastIndexOf("."));
+                    if(filename.length() > 32) filename = filename.substring(0, 32);
+                    filename += ".png";
+                    Log.d(TAG, filename);
+                    File file = new File(discardDir, filename);
+                    FileOutputStream f = new FileOutputStream(file);
+                    Bitmap bmp = ClientHelper.getImageFromCache(url);
+                    bmp.compress(Bitmap.CompressFormat.PNG, 100, f);
+                    f.close();
+                    Toast.makeText(mContext, "Saved to " + discardDir.toString(), Toast.LENGTH_LONG)
+                            .show();
+                    return true;
+                } catch(IOException e) {
+                    Toast.makeText(mContext, "Error: " + e, Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            }
+        });
     }
 
     private static void disableImageView(ImageView view) {
