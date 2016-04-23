@@ -327,7 +327,9 @@ public class Channel {
         ContentType type = ContentType.create(
                 URLConnection.getFileNameMap().getContentTypeFor(file.getAbsolutePath()));
         String name = file.getName();
-        return sendFile(stream, type, name, content);
+        Message msg = sendFile(stream, type, name, content);
+        stream.close();
+        return msg;
     }
 
     /**
