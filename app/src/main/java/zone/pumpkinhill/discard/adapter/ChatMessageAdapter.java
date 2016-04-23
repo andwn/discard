@@ -36,6 +36,7 @@ import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
+import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatMessageAdapter extends BaseAdapter {
@@ -126,8 +127,14 @@ public class ChatMessageAdapter extends BaseAdapter {
         Date time = msg.getCreationDate();
         String timeStr = time.after(mYesterday) ? TodayFormat.format(time) : OldFormat.format(time);
         timestamp.setText(timeStr);
+        // Message content and formatting
         TextView content = (TextView) view.findViewById(R.id.messageTextView);
-        content.setText(msg.getContent());
+        String contentStr = msg.getContent();
+        List<User> mentions = msg.getMentions();
+        for(User u : mentions) {
+            contentStr = contentStr.replaceAll("<@" + u.getID() + ">", "@" + u.getName());
+        }
+        content.setText(contentStr);
         // Attachment
         ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
         if(msg.getAttachments().size() >= 1) {
@@ -164,7 +171,6 @@ public class ChatMessageAdapter extends BaseAdapter {
         Matcher m = Patterns.WEB_URL.matcher(text);
         while (m.find()) {
             String url = m.group();
-            Log.v(TAG, "URL extracted: " + url);
             links.add(url);
         }
         return links.toArray(new String[links.size()]);
