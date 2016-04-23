@@ -32,22 +32,30 @@
             android:layout_height="wrap_content"
             android:minHeight="32dp" >
 
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/imageButton"
+                android:minWidth="48dp"
+                android:src="@drawable/ic_menu_gallery" />
+
             <EditText
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:id="@+id/editMessage"
                 android:enabled="true"
-                android:inputType="textShortMessage"
                 android:hint="Chat with"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:ellipsize="none"
+                android:scrollHorizontally="false" />
 
-            <Button
-                style="?android:attr/buttonStyleSmall"
+            <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:text="Send"
                 android:id="@+id/sendButton"
-                android:minWidth="64dp" />
+                android:minWidth="48dp"
+                android:src="@drawable/ic_menu_send" />
 
         </LinearLayout>
     </LinearLayout>

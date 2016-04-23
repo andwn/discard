@@ -36,7 +36,6 @@ public class SendMessageTask extends AsyncTask<String, Void, Boolean> {
                 Log.e(TAG, "Attempt to send message to unloaded channel.");
                 return false;
             }
-            Log.i(TAG, "Message: " + mMessage);
             channel.sendMessage(mMessage);
             return true;
         } catch (DiscordException | MissingPermissionsException | HTTP429Exception e) {

@@ -2,7 +2,10 @@ package zone.pumpkinhill.discard.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -11,10 +14,16 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +34,7 @@ import zone.pumpkinhill.discard.adapter.PrivateChannelAdapter;
 import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
 import zone.pumpkinhill.discard.task.LoadMessagesTask;
+import zone.pumpkinhill.discard.task.SendFileTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
@@ -36,9 +46,12 @@ import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
+import zone.pumpkinhill.http.entity.ContentType;
 
 public class ChatActivity extends AppCompatActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
+
+    private static final int FILE_SELECT_CODE = 0;
 
     private Context mContext = this;
     private Guild mGuild;
@@ -119,7 +132,7 @@ public class ChatActivity extends AppCompatActivity {
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
-        Button sendButton = (Button) findViewById(R.id.sendButton);
+        ImageButton sendButton = (ImageButton) findViewById(R.id.sendButton);
         if(sendButton != null) {
             sendButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -128,6 +141,19 @@ public class ChatActivity extends AppCompatActivity {
                     if(msg != null && !msg.getText().toString().isEmpty()) {
                         new SendMessageTask(msg, mMessageView).execute(mChannel.getID());
                     }
+                }
+            });
+        }
+        // Upload image button
+        ImageButton imageButton = (ImageButton) findViewById(R.id.imageButton);
+        if(imageButton != null) {
+            imageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT, null);
+                    i.setType("image/*");
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    startActivityForResult(i, FILE_SELECT_CODE);
                 }
             });
         }
@@ -178,6 +204,19 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case FILE_SELECT_CODE:
+                if (resultCode == RESULT_OK) {
+                    Uri uri = data.getData();
+                    new SendFileTask(mContext, uri, mMessageView).execute(mChannel.getID());
+                }
+                break;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @EventSubscriber

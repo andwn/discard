@@ -1,9 +1,12 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -274,6 +277,41 @@ public class Channel {
     /**
      * Sends a file to the channel.
      *
+     * @param stream Open InputStream to send.
+     * @param type MIME type of the file
+     * @param name Name of the file (can be made up, just name sure the extension is right)
+     * @param content The message to be sent with the file.
+     * @return The message sent.
+     *
+     * @throws IOException
+     * @throws MissingPermissionsException
+     * @throws HTTP429Exception
+     * @throws DiscordException
+     */
+    public Message sendFile(InputStream stream, ContentType type, String name, @Nullable String content)
+            throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
+        DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.SEND_MESSAGES, Permissions.ATTACH_FILES));
+        if (!client.isReady()) {
+            Log.w(TAG, "Trying to send file before logging in. Ignoring.");
+            return null;
+        }
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addBinaryBody("file", stream, type, name);
+        if (content != null) {
+            builder.addTextBody("content", content);
+        }
+        HttpEntity fileEntity = builder.build();
+        MessageResponse response = DiscordUtils.GSON.fromJson(Requests.POST.makeRequest(
+                client.getURL() + Endpoints.CHANNELS + id + "/messages",
+                fileEntity, new BasicNameValuePair("authorization", client.getToken())), MessageResponse.class);
+        Message message = DiscordUtils.getMessageFromJSON(client, this, response);
+        client.getDispatcher().dispatch(new MessageSendEvent(message));
+        return message;
+    }
+
+    /**
+     * Sends a file to the channel.
+     *
      * @param file The file to send.
      * @param content The message to be sent with the file.
      * @return The message sent.
@@ -283,24 +321,13 @@ public class Channel {
      * @throws HTTP429Exception
      * @throws DiscordException
      */
-    public Message sendFile(File file, String content) throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
-        DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.SEND_MESSAGES, Permissions.ATTACH_FILES));
-        if (client.isReady()) {
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create().addBinaryBody("file", file,
-                    ContentType.create(URLConnection.getFileNameMap().getContentTypeFor(file.getAbsolutePath())), file.getName());
-            if (content != null)
-                builder.addTextBody("content", content);
-            HttpEntity fileEntity = builder.build();
-            MessageResponse response = DiscordUtils.GSON.fromJson(Requests.POST.makeRequest(
-                    client.getURL() + Endpoints.CHANNELS + id + "/messages",
-                    fileEntity, new BasicNameValuePair("authorization", client.getToken())), MessageResponse.class);
-            Message message = DiscordUtils.getMessageFromJSON(client, this, response);
-            client.getDispatcher().dispatch(new MessageSendEvent(message));
-            return message;
-        } else {
-            Log.w(TAG, "Trying to send file before logging in. Ignoring.");
-            return null;
-        }
+    public Message sendFile(File file, @Nullable String content)
+            throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
+        InputStream stream = new FileInputStream(file);
+        ContentType type = ContentType.create(
+                URLConnection.getFileNameMap().getContentTypeFor(file.getAbsolutePath()));
+        String name = file.getName();
+        return sendFile(stream, type, name, content);
     }
 
     /**
@@ -314,7 +341,8 @@ public class Channel {
      * @throws HTTP429Exception
      * @throws DiscordException
      */
-    public Message sendFile(File file) throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
+    public Message sendFile(File file)
+            throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
         return sendFile(file, null);
     }
 
