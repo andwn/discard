@@ -82,9 +82,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void saveCredentials() {
         SharedPreferences prefs = new SecurePreferences(this);
-        String server = prefs.getString("server", mServerView.getText().toString());
-        String email = prefs.getString("email", mEmailView.getText().toString());
-        String password = prefs.getString("password", mPasswordView.getText().toString());
+        String server = mServerView.getText().toString();
+        String email = mEmailView.getText().toString();
+        String password = mPasswordView.getText().toString();
         prefs.edit().putString("server", server)
                 .putString("email", email)
                 .putString("password", password)

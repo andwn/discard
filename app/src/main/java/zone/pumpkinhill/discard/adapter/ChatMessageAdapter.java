@@ -201,7 +201,7 @@ public class ChatMessageAdapter extends BaseAdapter {
                 // Make sure SD card is mounted
                 if(!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())){
                     Toast.makeText(mContext, "External SD card not mounted", Toast.LENGTH_LONG).show();
-                    return false;
+                    return true;
                 }
                 // Get permission from user if we don't already have it
                 if(ActivityCompat.checkSelfPermission(
@@ -221,7 +221,7 @@ public class ChatMessageAdapter extends BaseAdapter {
                 // Double check permissions (user denied) and make directory if it doesn't exist
                 if(!(discardDir.exists() || discardDir.mkdir())) {
                     Toast.makeText(mContext, "Need permission", Toast.LENGTH_LONG).show();
-                    return false;
+                    return true;
                 }
                 try {
                     // FIXME: Change image cache to save original format and not bitmap
@@ -236,11 +236,10 @@ public class ChatMessageAdapter extends BaseAdapter {
                     f.close();
                     Toast.makeText(mContext, "Saved to " + discardDir.toString(), Toast.LENGTH_LONG)
                             .show();
-                    return true;
                 } catch(IOException e) {
                     Toast.makeText(mContext, "Error: " + e, Toast.LENGTH_LONG).show();
-                    return false;
                 }
+                return true;
             }
         });
     }
