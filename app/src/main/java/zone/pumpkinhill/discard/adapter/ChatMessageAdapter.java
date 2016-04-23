@@ -4,10 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.EnvironmentCompat;
 import android.util.Log;
@@ -30,6 +32,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 
 import zone.pumpkinhill.discard.ClientHelper;
@@ -49,6 +52,7 @@ public class ChatMessageAdapter extends BaseAdapter {
             OldFormat = new SimpleDateFormat("MMM dd hh:mm a", Locale.ENGLISH);
     private final Date mYesterday;
     private final Context mContext;
+    private final SharedPreferences mPref;
 
     public ChatMessageAdapter(Context context, MessageList messages) {
         mMessages = messages;
@@ -60,6 +64,7 @@ public class ChatMessageAdapter extends BaseAdapter {
         cal.set(Calendar.SECOND, 59);
         mYesterday = cal.getTime();
         mContext = context;
+        mPref = PreferenceManager.getDefaultSharedPreferences(mContext);
     }
 
     @Override
@@ -121,12 +126,16 @@ public class ChatMessageAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.nameTextView);
         name.setText(msg.getAuthor().getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.discriminatorTextView);
-        discriminator.setText("#" + msg.getAuthor().getDiscriminator());
-        TextView timestamp = (TextView) view.findViewById(R.id.timestampTextView);
-        Date time = msg.getCreationDate();
-        String timeStr = time.after(mYesterday) ? TodayFormat.format(time) : OldFormat.format(time);
-        timestamp.setText(timeStr);
+        if(mPref.getBoolean("show_discriminator", false)) {
+            TextView discriminator = (TextView) view.findViewById(R.id.discriminatorTextView);
+            discriminator.setText("#" + msg.getAuthor().getDiscriminator());
+        }
+        if(mPref.getBoolean("show_timestamp", true)) {
+            TextView timestamp = (TextView) view.findViewById(R.id.timestampTextView);
+            Date time = msg.getCreationDate();
+            String timeStr = time.after(mYesterday) ? TodayFormat.format(time) : OldFormat.format(time);
+            timestamp.setText(timeStr);
+        }
         // Message content and formatting
         TextView content = (TextView) view.findViewById(R.id.messageTextView);
         String contentStr = msg.getContent();
@@ -140,18 +149,19 @@ public class ChatMessageAdapter extends BaseAdapter {
         if(msg.getAttachments().size() >= 1) {
             String attURL = msg.getAttachments().get(0).getUrl();
             if (isImageFilename(attURL)) {
-                enableImageView(attachment, attURL);
+                boolean download = mPref.getBoolean("preload_attachments", true);
+                enableImageView(attachment, attURL, download);
             } else {
                 Log.w(TAG, "Unknown attachment file type: " + attURL);
                 disableImageView(attachment);
             }
-        } else { // Links
+        } else if(mPref.getBoolean("preload_links", true)){ // Links
             String[] links = extractLinks(msg.getContent());
             if(links.length > 0) {
                 boolean anyImages = false;
                 for(String link : links) {
                     if(isImageFilename(link)) {
-                        enableImageView(attachment, link);
+                        enableImageView(attachment, link, true);
                         anyImages = true;
                         break;
                     }
@@ -183,11 +193,15 @@ public class ChatMessageAdapter extends BaseAdapter {
                 text.toLowerCase().endsWith(".gif");
     }
 
-    private void enableImageView(ImageView view, final String url) {
+    private void enableImageView(ImageView view, final String url, boolean download) {
         Bitmap bmp = ClientHelper.getImageFromCache(url);
         if (bmp == null) {
             // Bitmap not cached and needs to download, load in background
-            new ImageDownloaderTask(view).execute(url);
+            if(download) {
+                new ImageDownloaderTask(view).execute(url);
+            } else {
+                view.setImageResource(android.R.drawable.gallery_thumb);
+            }
         } else {
             view.setImageBitmap(bmp);
         }
@@ -201,6 +215,7 @@ public class ChatMessageAdapter extends BaseAdapter {
                 mContext.startActivity(intent);
             }
         });
+        if(!download) return;
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {

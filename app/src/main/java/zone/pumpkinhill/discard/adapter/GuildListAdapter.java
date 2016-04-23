@@ -67,18 +67,14 @@ public class GuildListAdapter extends BaseAdapter {
             ImageView icon = (ImageView) view.findViewById(R.id.guildIcon);
             icon.setImageResource(R.drawable.ic_menu_camera);
             TextView name = (TextView) view.findViewById(R.id.guildName);
-            name.setText("Private Messages");
-            TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-            discriminator.setText("[?]");
+            name.setText("Direct Messages");
             return view;
         }
         Guild guild = mGuilds.get(position - 1);
         // Try loading message author's avatar from cache, or start to download it
         ImageView icon = (ImageView) view.findViewById(R.id.guildIcon);
         String iconURL = guild.getIconURL();
-        if(iconURL == null || iconURL.isEmpty()) {
-            icon.setImageResource(android.R.drawable.sym_def_app_icon);
-        } else {
+        if(iconURL != null && !iconURL.isEmpty()) {
             Bitmap bmp = ClientHelper.getImageFromCache(iconURL);
             if(bmp == null) {
                 // Bitmap not cached and needs to download, load in background
@@ -90,8 +86,6 @@ public class GuildListAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(guild.getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-        discriminator.setText("[?]");
         return view;
     }
 

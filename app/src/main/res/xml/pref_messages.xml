@@ -1,0 +1,24 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="show_discriminator"
+        android:summary="Identifier that looks like #1234"
+        android:title="Show discriminator" />
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="show_timestamp"
+        android:title="Show timestamp" />
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="preload_links"
+        android:title="Preload images in links" />
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="preload_attachments"
+        android:title="Preload images in attachments" />
+
+</PreferenceScreen>

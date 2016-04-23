@@ -10,7 +10,7 @@
         android:id="@+id/avatarImageView"
         android:minHeight="48dp"
         android:minWidth="48dp"
-        android:src="@android:drawable/sym_def_app_icon" />
+        android:src="@android:color/transparent" />
 
     <LinearLayout
         android:orientation="vertical"
@@ -25,7 +25,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="(Name)"
+                android:text=""
                 android:id="@+id/nameTextView"
                 android:textColor="#222222"
                 android:textStyle="bold" />
@@ -33,7 +33,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="(Discriminator)"
+                android:text=""
                 android:id="@+id/discriminatorTextView"
                 android:textColor="#444444" />
 
@@ -45,7 +45,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="(Timestamp)"
+                android:text=""
                 android:id="@+id/timestampTextView"
                 android:textColor="#444444" />
         </LinearLayout>
@@ -53,7 +53,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="(Message)"
+            android:text=""
             android:id="@+id/messageTextView"
             android:textColor="#222222"
             android:linksClickable="true"
