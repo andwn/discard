@@ -177,13 +177,17 @@ public class ChatMessageAdapter extends BaseAdapter {
     }
 
     private static String[] extractLinks(String text) {
-        List<String> links = new ArrayList<>();
-        Matcher m = Patterns.WEB_URL.matcher(text);
-        while (m.find()) {
-            String url = m.group();
-            links.add(url);
+        try {
+            List<String> links = new ArrayList<>();
+            Matcher m = Patterns.WEB_URL.matcher(text);
+            while (m.find()) {
+                String url = m.group();
+                links.add(url);
+            }
+            return links.toArray(new String[links.size()]);
+        } catch(NullPointerException e) {
+            return new String[]{};
         }
-        return links.toArray(new String[links.size()]);
     }
 
     private static boolean isImageFilename(String text) {

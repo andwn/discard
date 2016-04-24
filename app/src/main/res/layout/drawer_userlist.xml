@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/channelDrawer"
+    android:id="@+id/userListDrawer"
     android:orientation="vertical"
     android:layout_width="240dp"
     android:layout_height="match_parent"
-    android:layout_gravity="start"
+    android:layout_gravity="end"
     android:background="#DDDDDD" >
-
-    <include layout="@layout/list_item_guild"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
     <LinearLayout
         android:orientation="vertical"
@@ -20,24 +16,24 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Text Channels" />
+            android:text="Online" />
 
         <ListView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/textChannelList"
+            android:id="@+id/onlineUserList"
             android:layout_weight="1" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Voice Channels"
+            android:text="Offline"
             android:id="@+id/textView" />
 
         <ListView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/voiceChannelList"
+            android:id="@+id/offlineUserList"
             android:layout_weight="1" />
     </LinearLayout>
 

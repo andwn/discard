@@ -6,8 +6,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,6 +36,7 @@ import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discard.adapter.PrivateChannelAdapter;
 import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
+import zone.pumpkinhill.discard.adapter.UserListAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
 import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.SendFileTask;
@@ -45,7 +50,9 @@ import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
+import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
+import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.http.entity.ContentType;
 
 public class ChatActivity extends AppCompatActivity {
@@ -94,6 +101,9 @@ public class ChatActivity extends AppCompatActivity {
                     switchChannel((Channel) parent.getAdapter().getItem(position));
                 }
             });
+            // Disable the user list drawer
+            ((DrawerLayout) findViewById(R.id.chatActivity))
+                    .setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
         } else {
             // Guild
             mIsPrivate = false;
@@ -127,6 +137,12 @@ public class ChatActivity extends AppCompatActivity {
             // Setup adapter for voice channel list
             ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
+            // Inflate user list drawer
+            //LinearLayout userlist = (LinearLayout) getLayoutInflater().inflate(R.layout.drawer_userlist, null);
+            ListView online = (ListView) findViewById(R.id.onlineUserList);
+            ListView offline = (ListView) findViewById(R.id.offlineUserList);
+            online.setAdapter(new UserListAdapter(mContext, mGuild, true));
+            offline.setAdapter(new UserListAdapter(mContext, mGuild, false));
         }
         // Fill in message list
         if(mChannel == null) mChannel = mChannelList.get(0);

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v4.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/chatActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -61,5 +62,7 @@
     </LinearLayout>
 
     <include layout="@layout/drawer_channel" />
+
+    <include layout="@layout/drawer_userlist" />
 
 </android.support.v4.widget.DrawerLayout>
