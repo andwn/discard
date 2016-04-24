@@ -6,10 +6,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-import android.widget.EditText;
 import android.widget.ListView;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;

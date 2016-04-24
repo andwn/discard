@@ -15,10 +15,8 @@ import java.util.List;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
-import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Presences;
-import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
 
 public class UserListAdapter extends BaseAdapter {

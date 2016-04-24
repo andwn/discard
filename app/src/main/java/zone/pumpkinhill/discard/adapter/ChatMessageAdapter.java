@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.os.EnvironmentCompat;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -23,7 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -32,7 +30,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 
 import zone.pumpkinhill.discard.ClientHelper;

@@ -2,32 +2,22 @@ package zone.pumpkinhill.discard.activity;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,17 +33,13 @@ import zone.pumpkinhill.discard.task.SendFileTask;
 import zone.pumpkinhill.discard.task.SendMessageTask;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
-import zone.pumpkinhill.discord4droid.handle.events.GuildLeaveEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
-import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
-import zone.pumpkinhill.discord4droid.handle.obj.User;
-import zone.pumpkinhill.http.entity.ContentType;
 
 public class ChatActivity extends AppCompatActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
