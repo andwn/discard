@@ -67,8 +67,6 @@ public class VoiceChannelAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText("> " + channel.getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-        discriminator.setText("");
         return view;
     }
 

@@ -86,6 +86,9 @@ public class GuildListAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(guild.getName());
+        // TODO: Figure out how to get a list of unread messages/mentions
+        TextView status = (TextView) view.findViewById(R.id.statusText);
+
         return view;
     }
 

@@ -67,8 +67,9 @@ public class TextChannelAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText("# " + channel.getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-        discriminator.setText("[?]");
+        // TODO: New messages/mentions
+        TextView status = (TextView) view.findViewById(R.id.statusText);
+
         return view;
     }
 

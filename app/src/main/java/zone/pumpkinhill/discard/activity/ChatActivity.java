@@ -75,8 +75,6 @@ public class ChatActivity extends AppCompatActivity {
             drIcon.setImageResource(R.drawable.ic_menu_camera);
             TextView drName = (TextView) findViewById(R.id.guildName);
             drName.setText("Direct Messages");
-            TextView drNotify = (TextView) findViewById(R.id.notifyCount);
-            drNotify.setText("");
             // Setup adapter for text channel list
             ListView textChannels = (ListView) findViewById(R.id.textChannelList);
             textChannels.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
@@ -108,8 +106,6 @@ public class ChatActivity extends AppCompatActivity {
             drIcon.setImageBitmap(ClientHelper.getImageFromCache(mGuild.getIconURL()));
             TextView drName = (TextView) findViewById(R.id.guildName);
             drName.setText(mGuild.getName());
-            TextView drNotify = (TextView) findViewById(R.id.notifyCount);
-            drNotify.setText("");
             // Setup adapter for text channel list
             ListView textChannels = (ListView) findViewById(R.id.textChannelList);
             textChannels.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));

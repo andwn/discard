@@ -99,8 +99,22 @@ public class UserListAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(user.getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-        discriminator.setText("");
+        // Online status
+        TextView status = (TextView) view.findViewById(R.id.statusText);
+        status.setText("");
+        switch(user.getPresence()) {
+            case ONLINE: status.setBackgroundResource(R.color.colorStatusOnline); break;
+            case IDLE: status.setBackgroundResource(R.color.colorStatusIdle); break;
+            case OFFLINE: status.setBackgroundResource(R.color.colorStatusOffline); break;
+        }
+        // Now playing
+        TextView nowPlaying = (TextView) view.findViewById(R.id.nowPlaying);
+        String game = user.getGame();
+        if(game != null && !game.isEmpty()) {
+            nowPlaying.setText("Playing " + game);
+        } else {
+            nowPlaying.setText("");
+        }
         return view;
     }
 

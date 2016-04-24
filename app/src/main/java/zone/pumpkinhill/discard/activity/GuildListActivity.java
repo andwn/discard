@@ -72,9 +72,6 @@ public class GuildListActivity extends AppCompatActivity {
                 }
             }
         });
-        if(BuildConfig.DEBUG) {
-            new UpdatePresenceTask(null, "Android Studio").execute();
-        }
     }
 
     @Override
@@ -139,6 +136,9 @@ public class GuildListActivity extends AppCompatActivity {
         @EventSubscriber
         public void onReady(ReadyEvent event) {
             populateTable();
+            if(BuildConfig.DEBUG) {
+                new UpdatePresenceTask(null, "Android Studio").execute();
+            }
             ClientHelper.unsubscribe(this);
         }
     }

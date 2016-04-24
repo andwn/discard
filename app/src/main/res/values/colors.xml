@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Default colors -->
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <!-- Discord branding colors -->
+    <color name="colorDiscordBlurple">#7289DA</color>
+    <color name="colorDiscordWhite">#FFFFFF</color>
+    <color name="colorDiscordGreyple">#99AAB5</color>
+    <color name="colorDiscordDark">#2C2F33</color>
+    <color name="colorDiscordDarker">#23272A</color>
+    <!-- Status colors -->
+    <color name="colorImportant">#FF0000</color>
+    <color name="colorUnread">#AAAAAA</color>
+    <color name="colorStatusOnline">#00BB00</color>
+    <color name="colorStatusIdle">#DDCC00</color>
+    <color name="colorStatusOffline">#AAAAAA</color>
 </resources>

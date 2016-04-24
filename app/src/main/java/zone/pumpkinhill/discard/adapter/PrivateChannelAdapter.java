@@ -9,12 +9,15 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
+import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class PrivateChannelAdapter extends BaseAdapter {
@@ -82,8 +85,22 @@ public class PrivateChannelAdapter extends BaseAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(channel.getRecipient().getName());
-        TextView discriminator = (TextView) view.findViewById(R.id.notifyCount);
-        discriminator.setText("[?]");
+        // Online status
+        TextView status = (TextView) view.findViewById(R.id.statusText);
+        status.setText("");
+        switch(channel.getRecipient().getPresence()) {
+            case ONLINE: status.setBackgroundResource(R.color.colorStatusOnline); break;
+            case IDLE: status.setBackgroundResource(R.color.colorStatusIdle); break;
+            case OFFLINE: status.setBackgroundResource(R.color.colorStatusOffline); break;
+        }
+        // Now playing
+        TextView nowPlaying = (TextView) view.findViewById(R.id.nowPlaying);
+        String game = channel.getRecipient().getGame();
+        if(game != null && !game.isEmpty()) {
+            nowPlaying.setText("Playing " + game);
+        } else {
+            nowPlaying.setText("");
+        }
         return view;
     }
 
