@@ -10,7 +10,8 @@
     android:paddingLeft="4dp"
     android:paddingRight="4dp"
     android:paddingTop="4dp"
-    android:background="#DDDDDD" >
+    android:background="#DDDDDD"
+    android:clickable="true">
 
     <LinearLayout
         android:orientation="vertical"
