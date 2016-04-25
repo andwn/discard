@@ -74,10 +74,10 @@ public class PrivateChannelAdapter extends BaseAdapter {
         if(iconURL == null || iconURL.isEmpty()) {
             icon.setImageResource(android.R.drawable.sym_def_app_icon);
         } else {
-            Bitmap bmp = ClientHelper.getImageFromCache(iconURL);
+            Bitmap bmp = ClientHelper.getAvatarFromCache(iconURL);
             if(bmp == null) {
                 // Bitmap not cached and needs to download, load in background
-                new ImageDownloaderTask(icon).execute(iconURL);
+                new ImageDownloaderTask(icon, true).execute(iconURL);
             } else {
                 icon.setImageBitmap(bmp);
             }

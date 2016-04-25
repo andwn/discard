@@ -62,6 +62,7 @@ public class ChatMessageAdapter extends BaseAdapter {
         mYesterday = cal.getTime();
         mContext = context;
         mPref = PreferenceManager.getDefaultSharedPreferences(mContext);
+        ClientHelper.purgeImageCache();
     }
 
     @Override
@@ -112,10 +113,10 @@ public class ChatMessageAdapter extends BaseAdapter {
         if(avatarURL == null || avatarURL.isEmpty()) {
             avatar.setImageResource(android.R.drawable.sym_def_app_icon);
         } else {
-            Bitmap bmp = ClientHelper.getImageFromCache(avatarURL);
+            Bitmap bmp = ClientHelper.getAvatarFromCache(avatarURL);
             if(bmp == null) {
                 // Bitmap not cached and needs to download, load in background
-                new ImageDownloaderTask(avatar).execute(avatarURL);
+                new ImageDownloaderTask(avatar, true).execute(avatarURL);
             } else {
                 avatar.setImageBitmap(bmp);
             }
@@ -138,6 +139,7 @@ public class ChatMessageAdapter extends BaseAdapter {
         String contentStr = msg.getContent();
         List<User> mentions = msg.getMentions();
         for(User u : mentions) {
+            if(u == null) continue; // I actually got an NPE here...
             contentStr = contentStr.replaceAll("<@" + u.getID() + ">", "@" + u.getName());
         }
         content.setText(contentStr);
@@ -199,7 +201,7 @@ public class ChatMessageAdapter extends BaseAdapter {
         if (bmp == null) {
             // Bitmap not cached and needs to download, load in background
             if(download) {
-                new ImageDownloaderTask(view).execute(url);
+                new ImageDownloaderTask(view, false).execute(url);
             } else {
                 view.setImageResource(android.R.drawable.gallery_thumb);
             }

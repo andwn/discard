@@ -14,7 +14,8 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".activity.LoginActivity"
-            android:label="Discard">
+            android:label="Discard"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,10 +24,12 @@
         </activity>
         <activity
             android:name=".activity.GuildListActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize" />
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTask"/>
         <activity
             android:name=".activity.ChatActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize" />
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTask"/>
 
         <service
             android:name=".DiscordService"

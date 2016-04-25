@@ -5,9 +5,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,13 +22,14 @@ import zone.pumpkinhill.discard.BuildConfig;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.adapter.GuildListAdapter;
-import zone.pumpkinhill.discard.task.UpdatePresenceTask;
+import zone.pumpkinhill.discard.task.SuspendTask;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
+import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class GuildListActivity extends AppCompatActivity {
     private final static String TAG = GuildListActivity.class.getCanonicalName();
@@ -83,6 +86,7 @@ public class GuildListActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        new SuspendTask().execute("logout");
         Intent intent = new Intent(this,LoginActivity.class);
         startActivity(intent);
         finish();
@@ -102,22 +106,17 @@ public class GuildListActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    @EventSubscriber
-    public void onMessageReceived(MessageReceivedEvent event) {
-        Message message = event.getMessage();
-        Channel channel = message.getChannel();
-        // We only care if it is a mention or DM, and don't currently have the channel open
-        if(!channel.isPrivate() && !message.getMentions().contains(ClientHelper.ourUser())) return;
-        if(ClientHelper.getActiveChannel() != null &&
-                ClientHelper.getActiveChannel().getID().equals(channel.getID())) return;
-        Guild guild = channel.getGuild();
+    private void notifyMessage(Channel channel) {
+        Log.d(TAG, "Notifying for " + channel.getName());
+        Guild guild = null;
+        String author = "Someone";
+        if(channel.isPrivate()) author = ((PrivateChannel)channel).getRecipient().getName();
+        else guild = channel.getGuild();
         // TODO: Find better icons
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
-                .setContentTitle(
-                        message.getAuthor().getName() + (guild == null ?
-                                " sent you a message." : " mentioned you."))
-                .setContentText(message.getContent())
+                .setContentTitle(author + (guild == null ?
+                        " sent you a message." : " mentioned you in " +channel.getName() + "."))
                 .setAutoCancel(true);
         Intent i = new Intent(this, ChatActivity.class)
                 .putExtra("guildId", guild == null ? "0" : guild.getID())
@@ -131,14 +130,37 @@ public class GuildListActivity extends AppCompatActivity {
                 .notify(0, builder.build());
     }
 
+    // Notify on new messages
+    @EventSubscriber
+    public void onMessageReceived(MessageReceivedEvent event) {
+        Message message = event.getMessage();
+        Channel channel = message.getChannel();
+        // We only care if it is a mention or DM, and don't currently have the channel open
+        if(!channel.isPrivate() && !message.getMentions().contains(ClientHelper.ourUser())) return;
+        if(ClientHelper.getActiveChannel() != null &&
+                ClientHelper.getActiveChannel().getID().equals(channel.getID())) return;
+        notifyMessage(channel);
+    }
+
+    // Notify on new messages every few minutes during suspend/wake
+    @EventSubscriber
+    public void onReady(ReadyEvent event) {
+        for(Channel c : event.getClient().getChannels(true)) {
+            if(((PowerManager)getSystemService(POWER_SERVICE)).isScreenOn() &&
+                    ClientHelper.getActiveChannel() != null &&
+                    ClientHelper.getActiveChannel().getID().equals(c.getID())) continue;
+            //boolean priv = c.isPrivate();
+            //Message lastRead = c.getLastReadMessage();
+            int mentions = c.getMentionCount();
+            if(mentions > 0) notifyMessage(c);
+        }
+    }
+
     // Only do this once, but keep the others subscribed
     private class OnReadySubscriber {
         @EventSubscriber
         public void onReady(ReadyEvent event) {
             populateTable();
-            if(BuildConfig.DEBUG) {
-                new UpdatePresenceTask(null, "Android Studio").execute();
-            }
             ClientHelper.unsubscribe(this);
         }
     }

@@ -28,14 +28,16 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
     private static LinkedBlockingQueue<ImageDownloaderTask> ActiveTasks = new LinkedBlockingQueue<>();
 
     private String mURL;
+    private boolean mIsAvatar;
     private boolean mIsDownloading;
     private final Drawable mOldDrawable;
     private final WeakReference<ImageView> mImageViewReference;
 
-    public ImageDownloaderTask(ImageView imageView) {
+    public ImageDownloaderTask(ImageView imageView, boolean isAvatar) {
         mIsDownloading = false;
         mImageViewReference = new WeakReference<>(imageView);
         mOldDrawable = imageView.getDrawable();
+        mIsAvatar = isAvatar;
     }
 
     @Override
@@ -62,7 +64,8 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
                     return;
                 }
                 if (bitmap != null) {
-                    ClientHelper.addImageToCache(mURL, bitmap);
+                    if(mIsAvatar) ClientHelper.addAvatarToCache(mURL, bitmap);
+                    else ClientHelper.addImageToCache(mURL, bitmap);
                     imageView.setImageBitmap(bitmap);
                 } else {
                     // The download failed so make it a camera or something

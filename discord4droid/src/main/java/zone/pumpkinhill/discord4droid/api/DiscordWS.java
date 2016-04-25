@@ -200,12 +200,11 @@ public class DiscordWS extends WebSocketAdapter {
     private void startKeepalive() {
         final Runnable keepAlive = new Runnable() {
             public void run() {
-                if (isConnected.get()) {
-                    long l = System.currentTimeMillis()-client.timer;
-                    Log.d(TAG, "Sending keep alive... ("+System.currentTimeMillis()+") after "+l+"ms.");
-                    send(DiscordUtils.GSON.toJson(new KeepAliveRequest(client.lastSequence)));
-                    client.timer = System.currentTimeMillis();
-                }
+                if(!isConnected.get()) return;
+                long l = System.currentTimeMillis()-client.timer;
+                Log.d(TAG, "Sending keep alive... ("+System.currentTimeMillis()+") after "+l+"ms.");
+                send(DiscordUtils.GSON.toJson(new KeepAliveRequest(client.lastSequence)));
+                client.timer = System.currentTimeMillis();
             }
         };
         executorService.scheduleAtFixedRate(keepAlive,
@@ -439,8 +438,10 @@ public class DiscordWS extends WebSocketAdapter {
         }
         for (ReadyEventResponse.ReadStateResponse readState : event.read_state) {
             Channel channel = client.getChannelByID(readState.id);
-            if (channel != null)
+            if (channel != null) {
                 channel.setLastReadMessageID(readState.last_message_id);
+                channel.setMentionCount(readState.mention_count);
+            }
         }
         Log.i(TAG, "Logged in as "+client.ourUser.getName()+" (ID "+client.ourUser.getID()+").");
 

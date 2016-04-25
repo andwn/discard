@@ -16,6 +16,7 @@ public class ClientHelper {
     public static DiscordClient client = null;
     private static EventDispatcher mDispatcher = null;
     private static ArrayList<Object> mSubscribers = new ArrayList<>();
+    private static HashMap<String, Bitmap> mAvatarCache = new HashMap<>();
     private static HashMap<String, Bitmap> mImageCache = new HashMap<>();
     private static Channel mActiveChannel = null;
 
@@ -62,15 +63,25 @@ public class ClientHelper {
     public static void unsubscribe(Object subscriber) {
         if(subscriber == null) return;
         mSubscribers.remove(subscriber);
-        mDispatcher.unregisterListener(subscriber);
+        if(mDispatcher != null) mDispatcher.unregisterListener(subscriber);
     }
 
     // Avatars
+    public static Bitmap getAvatarFromCache(String url) {
+        return mAvatarCache.get(url);
+    }
+    public static void addAvatarToCache(String url, Bitmap avatar) {
+        mAvatarCache.put(url, avatar);
+    }
+    // Images
     public static Bitmap getImageFromCache(String url) {
         return mImageCache.get(url);
     }
     public static void addImageToCache(String url, Bitmap avatar) {
         mImageCache.put(url, avatar);
+    }
+    public static void purgeImageCache() {
+        mImageCache.clear();
     }
 
     // User/Channel

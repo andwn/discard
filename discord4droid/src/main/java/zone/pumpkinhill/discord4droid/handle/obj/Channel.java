@@ -116,6 +116,8 @@ public class Channel {
      */
     protected final DiscordClient client;
 
+    protected int mentionCount;
+
     public Channel(DiscordClient client, String name, String id, Guild parent, String topic, int position) {
         this(client, name, id, parent, topic, position,
                 new HashMap<String, PermissionOverride>(), new HashMap<String, PermissionOverride>());
@@ -539,6 +541,14 @@ public class Channel {
      */
     public Map<String, PermissionOverride> getRoleOverrides() {
         return roleOverrides;
+    }
+
+    public int getMentionCount() {
+        return mentionCount;
+    }
+
+    public void setMentionCount(int count) {
+        mentionCount = count;
     }
 
     /**

@@ -75,10 +75,10 @@ public class GuildListAdapter extends BaseAdapter {
         ImageView icon = (ImageView) view.findViewById(R.id.guildIcon);
         String iconURL = guild.getIconURL();
         if(iconURL != null && !iconURL.isEmpty()) {
-            Bitmap bmp = ClientHelper.getImageFromCache(iconURL);
+            Bitmap bmp = ClientHelper.getAvatarFromCache(iconURL);
             if(bmp == null) {
                 // Bitmap not cached and needs to download, load in background
-                new ImageDownloaderTask(icon).execute(iconURL);
+                new ImageDownloaderTask(icon, true).execute(iconURL);
             } else {
                 icon.setImageBitmap(bmp);
             }
