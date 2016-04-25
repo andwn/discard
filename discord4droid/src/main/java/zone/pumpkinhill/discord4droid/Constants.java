@@ -2,7 +2,7 @@ package zone.pumpkinhill.discord4droid;
 
 public interface Constants {
     String APP_NAME = "Discard";
-    String APP_VERSION = "1.0.0-alpha1";
+    String APP_VERSION = "0.1";
 
     String LIB_NAME = "Discord4Droid";
     String LIB_VERSION = "2.4.4";
