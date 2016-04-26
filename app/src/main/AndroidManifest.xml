@@ -14,8 +14,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".activity.LoginActivity"
-            android:label="Discard"
-            android:launchMode="singleInstance">
+            android:label="Discard">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
