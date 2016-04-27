@@ -5,10 +5,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,16 +39,18 @@ public class GuildListActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guild_list);
         ListView guildList = (ListView) findViewById(R.id.guildList);
-        guildList.setOnItemClickListener(new ListView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapter, View v, int position, long idk) {
-                // Pass selected guild ID to ChatActivity
-                String guildId = String.valueOf(adapter.getItemIdAtPosition(position));
-                Intent i = new Intent(mContext, ChatActivity.class)
-                        .putExtra("guildId", guildId);
-                startActivity(i);
-            }
-        });
+        if(guildList != null) {
+            guildList.setOnItemClickListener(new ListView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapter, View v, int position, long idk) {
+                    // Pass selected guild ID to ChatActivity
+                    String guildId = String.valueOf(adapter.getItemIdAtPosition(position));
+                    Intent i = new Intent(mContext, ChatActivity.class)
+                            .putExtra("guildId", guildId);
+                    startActivity(i);
+                }
+            });
+        }
         if(ClientHelper.isReady()) {
             populateTable();
         } else {
@@ -77,14 +77,9 @@ public class GuildListActivity extends BaseActivity {
     }
 
     @Override
-    public void finish() {
-        super.finish();
-        ClientHelper.unsubscribe(this);
-    }
-
-    @Override
     public void onBackPressed() {
         super.onBackPressed();
+        ClientHelper.unsubscribe(this);
         new NetworkTask(mContext).execute("logout");
         Intent intent = new Intent(this,LoginActivity.class);
         startActivity(intent);
@@ -132,6 +127,7 @@ public class GuildListActivity extends BaseActivity {
 
     // Notify on new messages
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
         Channel channel = message.getChannel();
@@ -144,6 +140,7 @@ public class GuildListActivity extends BaseActivity {
 
     // Notify on new messages every few minutes during suspend/wake
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onReady(ReadyEvent event) {
         for(Channel c : event.getClient().getChannels(true)) {
             if(!isAppInBackground && ClientHelper.getActiveChannel() != null &&
@@ -156,6 +153,7 @@ public class GuildListActivity extends BaseActivity {
     // Only do this once, but keep the others subscribed
     private class OnReadySubscriber {
         @EventSubscriber
+        @SuppressWarnings("unused")
         public void onReady(ReadyEvent event) {
             populateTable();
             ClientHelper.unsubscribe(this);
