@@ -7,7 +7,7 @@
     <!-- Discord branding colors -->
     <color name="colorDiscordBlurple">#7289DA</color>
     <color name="colorDiscordWhite">#FFFFFF</color>
-    <color name="colorDiscordGreyple">#99AAB5</color>
+    <color name="colorDiscordGreyple">#99aab5</color>
     <color name="colorDiscordDark">#2C2F33</color>
     <color name="colorDiscordDarker">#23272A</color>
     <!-- Status colors -->

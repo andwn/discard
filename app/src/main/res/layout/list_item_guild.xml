@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
+    android:paddingBottom="2dp"
+    android:paddingLeft="2dp"
+    android:paddingRight="2dp"
+    android:paddingTop="2dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center_vertical">
@@ -10,8 +14,8 @@
         android:layout_height="wrap_content"
         android:id="@+id/guildIcon"
         android:minHeight="48dp"
-        android:minWidth="48dp"
-        android:src="@android:color/transparent" />
+        android:src="@android:color/transparent"
+        android:minWidth="48dp" />
 
     <LinearLayout
         android:orientation="vertical"

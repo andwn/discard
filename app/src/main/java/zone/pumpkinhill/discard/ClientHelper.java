@@ -81,6 +81,7 @@ public class ClientHelper {
         mImageCache.put(url, avatar);
     }
     public static void purgeImageCache() {
+        for(Bitmap b : mImageCache.values()) b.recycle();
         mImageCache.clear();
     }
 
