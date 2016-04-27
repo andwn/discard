@@ -41,7 +41,7 @@ import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
-public class ChatActivity extends AppCompatActivity {
+public class ChatActivity extends BaseActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
 
     private static final int FILE_SELECT_CODE = 0;
@@ -52,6 +52,7 @@ public class ChatActivity extends AppCompatActivity {
     private Channel mChannel;
     private ListView mMessageView;
     private boolean mIsPrivate;
+    private DrawerLayout mLayout;
 
     private Event mEvent;
 
@@ -59,13 +60,19 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
         ClientHelper.subscribe(this);
         String guildId = getIntent().getExtras().getString("guildId");
         String channelId = getIntent().getExtras().getString("channelId");
         if(guildId == null || guildId.equals("0")) {
             // Private chat
             mIsPrivate = true;
-            mChannelList = getPrivateChannels();
+            mChannelList = new ArrayList<>();
+            for(Channel c : ClientHelper.client.getChannels(true)) {
+                if(c == null || !(c instanceof PrivateChannel)) continue;
+                if(channelId != null && channelId.equals(c.getID())) mChannel = c;
+                mChannelList.add(c);
+            }
             if(mChannelList.size() == 0) { // No private channels
                 finish();
                 return;
@@ -83,6 +90,7 @@ public class ChatActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     switchChannel((Channel) parent.getAdapter().getItem(position));
+                    mLayout.closeDrawers();
                 }
             });
             // Disable the user list drawer
@@ -114,6 +122,7 @@ public class ChatActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     switchChannel((Channel) parent.getAdapter().getItem(position));
+                    mLayout.closeDrawers();
                 }
             });
             // Setup adapter for voice channel list
@@ -155,16 +164,6 @@ public class ChatActivity extends AppCompatActivity {
                 }
             });
         }
-    }
-
-    private List<Channel> getPrivateChannels() {
-        List<Channel> channelList = new ArrayList<>();
-        for(Channel c : ClientHelper.client.getChannels(true)) {
-            if(!(c instanceof PrivateChannel)) continue;
-            if(mChannel == null) mChannel = c;
-            channelList.add(c);
-        }
-        return channelList;
     }
 
     private void switchChannel(Channel newChannel) {

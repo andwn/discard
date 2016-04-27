@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -30,7 +29,7 @@ import zone.pumpkinhill.discard.DiscordService;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
     private final static String TAG = LoginActivity.class.getCanonicalName();
 
     private final Context mContext = this;

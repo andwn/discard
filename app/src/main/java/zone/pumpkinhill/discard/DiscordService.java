@@ -11,7 +11,7 @@ import android.util.Log;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import zone.pumpkinhill.discard.task.SuspendTask;
+import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class DiscordService extends Service {
@@ -53,7 +53,7 @@ public class DiscordService extends Service {
     public void onStart(Intent intent, int startId) {
         try {
             mScreenOn = intent.getBooleanExtra("screen_state", false);
-            new SuspendTask().execute(mScreenOn ? "resume" : "suspend");
+            new NetworkTask(getApplicationContext()).execute(mScreenOn ? "resume" : "suspend");
         } catch(NullPointerException e) {
             Log.d(TAG, e.toString());
         }

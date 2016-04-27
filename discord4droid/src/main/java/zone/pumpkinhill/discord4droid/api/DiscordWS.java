@@ -96,7 +96,6 @@ import zone.pumpkinhill.discord4droid.json.responses.events.ReadyEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.ResumedEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.TypingEventResponse;
 import zone.pumpkinhill.discord4droid.json.responses.events.UserUpdateEventResponse;
-import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class DiscordWS extends WebSocketAdapter {
     private final static String TAG = DiscordWS.class.getCanonicalName();

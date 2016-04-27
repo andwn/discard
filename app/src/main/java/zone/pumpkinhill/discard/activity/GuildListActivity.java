@@ -18,11 +18,10 @@ import android.widget.ListView;
 
 import java.util.List;
 
-import zone.pumpkinhill.discard.BuildConfig;
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.adapter.GuildListAdapter;
-import zone.pumpkinhill.discard.task.SuspendTask;
+import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
@@ -31,7 +30,7 @@ import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
-public class GuildListActivity extends AppCompatActivity {
+public class GuildListActivity extends BaseActivity {
     private final static String TAG = GuildListActivity.class.getCanonicalName();
 
     private Context mContext = this;
@@ -86,7 +85,7 @@ public class GuildListActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        new SuspendTask().execute("logout");
+        new NetworkTask(mContext).execute("logout");
         Intent intent = new Intent(this,LoginActivity.class);
         startActivity(intent);
         finish();
@@ -115,7 +114,8 @@ public class GuildListActivity extends AppCompatActivity {
         // TODO: Find better icons
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
-                .setContentTitle(author + (guild == null ?
+                .setContentTitle("Discard")
+                .setContentText(author + (guild == null ?
                         " sent you a message." : " mentioned you in " +channel.getName() + "."))
                 .setAutoCancel(true);
         Intent i = new Intent(this, ChatActivity.class)
@@ -137,7 +137,7 @@ public class GuildListActivity extends AppCompatActivity {
         Channel channel = message.getChannel();
         // We only care if it is a mention or DM, and don't currently have the channel open
         if(!channel.isPrivate() && !message.getMentions().contains(ClientHelper.ourUser())) return;
-        if(ClientHelper.getActiveChannel() != null &&
+        if(!isAppInBackground && ClientHelper.getActiveChannel() != null &&
                 ClientHelper.getActiveChannel().getID().equals(channel.getID())) return;
         notifyMessage(channel);
     }
@@ -146,11 +146,8 @@ public class GuildListActivity extends AppCompatActivity {
     @EventSubscriber
     public void onReady(ReadyEvent event) {
         for(Channel c : event.getClient().getChannels(true)) {
-            if(((PowerManager)getSystemService(POWER_SERVICE)).isScreenOn() &&
-                    ClientHelper.getActiveChannel() != null &&
+            if(!isAppInBackground && ClientHelper.getActiveChannel() != null &&
                     ClientHelper.getActiveChannel().getID().equals(c.getID())) continue;
-            //boolean priv = c.isPrivate();
-            //Message lastRead = c.getLastReadMessage();
             int mentions = c.getMentionCount();
             if(mentions > 0) notifyMessage(c);
         }
