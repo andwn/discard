@@ -24,10 +24,10 @@ public class CreateGuildRequest {
      */
     public String icon;
 
-    public CreateGuildRequest(String name, String region, Bitmap icon) {
+    public CreateGuildRequest(String name, String region, String icon) {
         this.name = name;
         this.region = region;
         this.icon = icon == null ? null : String.format("data:image/%s;base64,%s",
-                "jpeg", ImageHelper.getBase64JPEG(icon));
+                "jpeg", icon);
     }
 }

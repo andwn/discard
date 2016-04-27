@@ -24,7 +24,4 @@ public class ImageHelper {
         final byte[] decodedBytes = Base64.decode(str, Base64.DEFAULT);
         return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
     }
-    public static String forUser(User user) {
-        return user.getAvatar();
-    }
 }

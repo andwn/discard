@@ -51,6 +51,7 @@ public class DiscordService extends Service {
 
     @Override
     public void onStart(Intent intent, int startId) {
+        if(ClientHelper.client == null || ClientHelper.client.getOurUser() == null) return;
         try {
             mScreenOn = intent.getBooleanExtra("screen_state", false);
             new NetworkTask(getApplicationContext()).execute(mScreenOn ? "resume" : "suspend");

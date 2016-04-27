@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,8 +28,7 @@ import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
 import zone.pumpkinhill.discard.adapter.UserListAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
 import zone.pumpkinhill.discard.task.LoadMessagesTask;
-import zone.pumpkinhill.discard.task.SendFileTask;
-import zone.pumpkinhill.discard.task.SendMessageTask;
+import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
@@ -128,8 +126,7 @@ public class ChatActivity extends BaseActivity {
             // Setup adapter for voice channel list
             ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
-            // Inflate user list drawer
-            //LinearLayout userlist = (LinearLayout) getLayoutInflater().inflate(R.layout.drawer_userlist, null);
+            // Setup user list drawer
             ListView online = (ListView) findViewById(R.id.onlineUserList);
             ListView offline = (ListView) findViewById(R.id.offlineUserList);
             online.setAdapter(new UserListAdapter(mContext, mGuild, true));
@@ -145,9 +142,9 @@ public class ChatActivity extends BaseActivity {
                 @Override
                 public void onClick(View v) {
                     EditText msg = (EditText) findViewById(R.id.editMessage);
-                    if(msg != null && !msg.getText().toString().isEmpty()) {
-                        new SendMessageTask(msg, mMessageView).execute(mChannel.getID());
-                    }
+                    if(msg == null || msg.getText().toString().isEmpty()) return;
+                    new NetworkTask(mContext).execute("send-message", mChannel.getID(), msg.getText().toString());
+                    msg.setText("");
                 }
             });
         }
@@ -209,7 +206,7 @@ public class ChatActivity extends BaseActivity {
             case FILE_SELECT_CODE:
                 if (resultCode == RESULT_OK) {
                     Uri uri = data.getData();
-                    new SendFileTask(mContext, uri, mMessageView).execute(mChannel.getID());
+                    new NetworkTask(mContext).execute("send-file", mChannel.getID(), uri.toString());
                 }
                 break;
         }

@@ -304,20 +304,16 @@ public final class DiscordClient {
         }
     }
 
-    private void changeAccountInfo(String username, String email, String password, Bitmap avatar) throws HTTP429Exception, DiscordException {
-        if (!isReady()) {
-            Log.w(TAG, "Trying to change account without being logged in. Ignoring.");
-            return;
-        }
-
+    public void changeAccountInfo(String username, String email, String password, String avatar) throws HTTP429Exception, DiscordException {
+        if(!isReady() || ourUser == null) return;
         try {
             AccountInfoChangeResponse response = DiscordUtils.GSON.fromJson(
                     Requests.PATCH.makeRequest(url + Endpoints.USERS + "@me",
                     new StringEntity(DiscordUtils.GSON.toJson(new AccountInfoChangeRequest(
                             email == null ? this.email : email, this.password,
                             password == null ? this.password : password,
-                            username == null ? getOurUser().getName() : username,
-                            avatar == null ? ImageHelper.forUser(ourUser) : ImageHelper.getBase64JPEG(avatar)))),
+                            username == null ? ourUser.getName() : username,
+                            avatar == null ? ourUser.getAvatar() : avatar))),
                     new BasicNameValuePair("Authorization", token),
                     new BasicNameValuePair("content-type", "application/json; charset=UTF-8")), AccountInfoChangeResponse.class);
 
@@ -328,50 +324,6 @@ public final class DiscordClient {
         } catch (UnsupportedEncodingException | NullPointerException e) {
             Log.e(TAG, "Error changing account info: " + e);
         }
-    }
-
-    /**
-     * Changes this client's account's username.
-     *
-     * @param username The new username.
-     * @throws DiscordException
-     * @throws HTTP429Exception
-     */
-    public void changeUsername(String username) throws DiscordException, HTTP429Exception {
-        changeAccountInfo(username, null, null, null);
-    }
-
-    /**
-     * Changes this client's account's email.
-     *
-     * @param email The new email.
-     * @throws DiscordException
-     * @throws HTTP429Exception
-     */
-    public void changeEmail(String email) throws DiscordException, HTTP429Exception {
-        changeAccountInfo(null, email, null, null);
-    }
-
-    /**
-     * Changes this client's account's password.
-     *
-     * @param password The new password.
-     * @throws DiscordException
-     * @throws HTTP429Exception
-     */
-    public void changePassword(String password) throws DiscordException, HTTP429Exception {
-        changeAccountInfo(null, null, password, null);
-    }
-
-    /**
-     * Changes this client's account's avatar.
-     *
-     * @param avatar The new avatar.
-     * @throws DiscordException
-     * @throws HTTP429Exception
-     */
-    public void changeAvatar(Bitmap avatar) throws DiscordException, HTTP429Exception {
-        changeAccountInfo(null, null, null, avatar);
     }
 
     /**
@@ -405,10 +357,6 @@ public final class DiscordClient {
      * @return The user object.
      */
     public User getOurUser() {
-        if (!isReady()) {
-            Log.w(TAG, "Trying to get user before logging in.");
-            return null;
-        }
         return ourUser;
     }
 
@@ -616,12 +564,15 @@ public final class DiscordClient {
      * @throws HTTP429Exception
      * @throws DiscordException
      */
-    public Guild createGuild(String name, Region region, Bitmap icon) throws HTTP429Exception, DiscordException {
+    public Guild createGuild(String name, String region, String icon) throws HTTP429Exception, DiscordException {
         try {
+            if(getRegionByID(region) == null) {
+                throw new DiscordException("Unable to find region with ID " + region);
+            }
             GuildResponse guildResponse = DiscordUtils.GSON.fromJson(
                     Requests.POST.makeRequest(url + Endpoints.API + "/guilds",
                     new StringEntity(DiscordUtils.GSON_NO_NULLS.toJson(
-                            new CreateGuildRequest(name, region.getID(), icon))),
+                            new CreateGuildRequest(name, region, icon))),
                     new BasicNameValuePair("authorization", this.token),
                     new BasicNameValuePair("content-type", "application/json")), GuildResponse.class);
             Guild guild = DiscordUtils.getGuildFromJSON(this, guildResponse);

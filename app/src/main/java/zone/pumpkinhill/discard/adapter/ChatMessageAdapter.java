@@ -193,7 +193,10 @@ public class ChatMessageAdapter extends BaseAdapter {
         return text.toLowerCase().endsWith(".jpg") ||
                 text.toLowerCase().endsWith(".jpeg") ||
                 text.toLowerCase().endsWith(".png") ||
-                text.toLowerCase().endsWith(".gif");
+                text.toLowerCase().endsWith(".gif") ||
+                // Twitter sucks tbh
+                text.toLowerCase().endsWith(".jpg:orig") ||
+                text.toLowerCase().endsWith(".jpg:large");
     }
 
     private void enableImageView(ImageView view, final String url, boolean download) {
