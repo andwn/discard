@@ -32,9 +32,7 @@ import zone.pumpkinhill.discord4droid.util.DiscordException;
 public class LoginActivity extends BaseActivity {
     private final static String TAG = LoginActivity.class.getCanonicalName();
 
-    private final Context mContext = this;
     private UserLoginTask mAuthTask = null;
-
     private EditText mServerView;
     private EditText mEmailView;
     private EditText mPasswordView;
@@ -151,7 +149,7 @@ public class LoginActivity extends BaseActivity {
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
+            showProgress(mProgressView, mLoginFormView, true);
             mAuthTask = new UserLoginTask(server, email, password);
             mAuthTask.execute((Void) null);
         }
@@ -163,42 +161,6 @@ public class LoginActivity extends BaseActivity {
 
     private boolean isPasswordValid(String password) {
         return password.length() > 4;
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
     }
 
     /**
@@ -230,7 +192,7 @@ public class LoginActivity extends BaseActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
-            showProgress(false);
+            showProgress(mProgressView, mLoginFormView, false);
 
             if (success) {
                 if(mRememberView.isChecked()) saveCredentials();
@@ -245,22 +207,8 @@ public class LoginActivity extends BaseActivity {
         @Override
         protected void onCancelled() {
             mAuthTask = null;
-            showProgress(false);
+            showProgress(mProgressView, mLoginFormView, false);
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.options_menu, menu);
-        menu.findItem(R.id.menu_preferences).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                Intent i = new Intent(mContext, SettingsActivity.class);
-                startActivity(i);
-                return true;
-            }
-        });
-        return super.onCreateOptionsMenu(menu);
     }
 }
 

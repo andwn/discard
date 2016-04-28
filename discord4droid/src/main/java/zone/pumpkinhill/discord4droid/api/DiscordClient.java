@@ -622,4 +622,8 @@ public final class DiscordClient {
     public boolean isSuspended() {
         return suspended;
     }
+
+    public String getEmail() {
+        return email;
+    }
 }

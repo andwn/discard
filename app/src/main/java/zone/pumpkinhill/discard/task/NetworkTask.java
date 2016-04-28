@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import zone.pumpkinhill.discard.ClientHelper;
+import zone.pumpkinhill.discard.activity.ProfileActivity;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
@@ -26,6 +27,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
 
     private final Context mContext;
     private String mErrorMsg;
+    private String[] mParams;
 
     public NetworkTask(Context context) {
         mContext = context;
@@ -33,6 +35,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
 
     protected Boolean doInBackground(String... params) {
         try {
+            mParams = params;
             switch(params[0]) {
                 case "login": ClientHelper.login(params[1], params[2], params[3]); break;
                 case "logout": ClientHelper.logout(); break;
@@ -60,6 +63,9 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
     }
 
     protected void onPostExecute(Boolean result) {
+        switch(mParams[0]) {
+            case "change-profile": ((ProfileActivity)mContext).taskFinished(result); break;
+        }
         if(!result) Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_LONG).show();
     }
 

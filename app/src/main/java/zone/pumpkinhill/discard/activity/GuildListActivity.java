@@ -31,13 +31,13 @@ import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 public class GuildListActivity extends BaseActivity {
     private final static String TAG = GuildListActivity.class.getCanonicalName();
 
-    private Context mContext = this;
     private List<Guild> mGuilds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guild_list);
+        showMenuProfile = true;
         ListView guildList = (ListView) findViewById(R.id.guildList);
         if(guildList != null) {
             guildList.setOnItemClickListener(new ListView.OnItemClickListener() {
@@ -84,20 +84,6 @@ public class GuildListActivity extends BaseActivity {
         Intent intent = new Intent(this,LoginActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.options_menu, menu);
-        menu.findItem(R.id.menu_preferences).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                Intent i = new Intent(mContext, SettingsActivity.class);
-                startActivity(i);
-                return true;
-            }
-        });
-        return super.onCreateOptionsMenu(menu);
     }
 
     private void notifyMessage(Channel channel) {

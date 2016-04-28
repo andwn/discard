@@ -58,6 +58,7 @@ public class ChatActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        showMenuProfile = true;
         mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
         ClientHelper.subscribe(this);
         String guildId = getIntent().getExtras().getString("guildId");
@@ -184,20 +185,6 @@ public class ChatActivity extends BaseActivity {
         Intent intent = new Intent(this,GuildListActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.options_menu, menu);
-        menu.findItem(R.id.menu_preferences).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                Intent i = new Intent(mContext, SettingsActivity.class);
-                startActivity(i);
-                return true;
-            }
-        });
-        return super.onCreateOptionsMenu(menu);
     }
 
     @Override

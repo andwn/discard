@@ -24,11 +24,11 @@
         <activity
             android:name=".activity.GuildListActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:launchMode="singleTask"/>
+            android:launchMode="singleTask" />
         <activity
             android:name=".activity.ChatActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:launchMode="singleTask"/>
+            android:launchMode="singleTask" />
 
         <service
             android:name=".DiscordService"
@@ -38,6 +38,7 @@
         <activity
             android:name=".activity.SettingsActivity"
             android:label="@string/title_activity_preferences" />
-
+        <activity android:name=".activity.ProfileActivity"></activity>
     </application>
+
 </manifest>
