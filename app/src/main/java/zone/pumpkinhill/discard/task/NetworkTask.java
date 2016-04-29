@@ -48,7 +48,8 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
                 case "logout": ClientHelper.logout(); break;
                 case "suspend": ClientHelper.client.suspend(); break;
                 case "resume": ClientHelper.client.resume(); break;
-                case "load-messages": return doLoadMessages(params[1], params[2], params[3]);
+                case "load-messages": return doLoadMessages(params[1], params[2], params[3], params[4]);
+                case "ack-message" : ClientHelper.client.ackMessage(params[1], params[2]); break;
                 case "send-message": return doSendMessage(params[1], params[2]);
                 case "send-file": return doSendFile(params[1], params[2]);
                 case "create-invite":
@@ -70,7 +71,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         }
     }
 
-    protected boolean doLoadMessages(String channelId, String index, String count) {
+    protected boolean doLoadMessages(String channelId, String before, String after, String count) {
         try {
             Channel channel = ClientHelper.client.getChannelByID(channelId);
             mTempMsgList = new MessageList(ClientHelper.client, channel);
@@ -160,6 +161,9 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         m.addAll(mTempMsgList.reverse());
         ((ChatMessageAdapter) ((ListView) ((ChatActivity) mContext)
                 .findViewById(R.id.messageListView)).getAdapter()).notifyDataSetChanged();
+        if(mParams[2] == null && mParams[3] == null) {
+            new NetworkTask(mContext).execute("ack-message", c.getID(), m.getLatestMessage().getID());
+        }
         return true;
     }
 }

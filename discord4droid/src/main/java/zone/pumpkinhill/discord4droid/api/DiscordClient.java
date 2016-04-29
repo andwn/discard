@@ -18,6 +18,7 @@ import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Invite;
+import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 import zone.pumpkinhill.discord4droid.handle.obj.Region;
@@ -582,6 +583,12 @@ public final class DiscordClient {
             Log.e(TAG, "Error creating guild: " + e);
         }
         return null;
+    }
+
+    public void ackMessage(String channelId, String messageId) throws HTTP429Exception, DiscordException {
+        Requests.POST.makeRequest(url + Endpoints.API +
+                "/channels/" + channelId + "/messages/" + messageId + "/ack",
+                new BasicNameValuePair("authorization", token));
     }
 
     /**

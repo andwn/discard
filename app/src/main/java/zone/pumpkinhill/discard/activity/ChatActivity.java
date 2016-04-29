@@ -47,8 +47,6 @@ public class ChatActivity extends BaseActivity {
     private boolean mIsPrivate;
     private DrawerLayout mLayout;
 
-    private Event mEvent;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,6 +130,7 @@ public class ChatActivity extends BaseActivity {
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
+        // Send message button
         ImageButton sendButton = (ImageButton) findViewById(R.id.sendButton);
         if(sendButton != null) {
             sendButton.setOnClickListener(new View.OnClickListener() {
@@ -164,7 +163,7 @@ public class ChatActivity extends BaseActivity {
         mChannel = newChannel;
         ClientHelper.setActiveChannel(newChannel);
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new NetworkTask(mContext).execute("load-messages", mChannel.getID(), "0", "100");
+        new NetworkTask(mContext).execute("load-messages", mChannel.getID(), null, null, "50");
         setTitle(mChannel.getName());
     }
 
@@ -185,51 +184,48 @@ public class ChatActivity extends BaseActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case FILE_SELECT_CODE:
-                if (resultCode == RESULT_OK) {
-                    Uri uri = data.getData();
-                    new NetworkTask(mContext).execute("send-file", mChannel.getID(), uri.toString());
-                }
-                break;
+        if(requestCode == FILE_SELECT_CODE && resultCode == RESULT_OK) {
+            Uri uri = data.getData();
+            new NetworkTask(mContext).execute("send-file", mChannel.getID(), uri.toString());
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
     @EventSubscriber
-    public void onMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(final MessageReceivedEvent event) {
         if(!event.getMessage().getChannel().equals(mChannel)) return;
-        mEvent = event;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mChannel.getMessages().add(((MessageReceivedEvent)mEvent).getMessage());
+                mChannel.getMessages().add(event.getMessage());
+                ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
+                if(!isAppInBackground) {
+                    new NetworkTask(mContext).execute("ack-message", mChannel.getID(),
+                            event.getMessage().getID());
+                }
+            }
+        });
+    }
+
+    @EventSubscriber
+    public void onMessageSent(final MessageSendEvent event) {
+        if(!event.getMessage().getChannel().equals(mChannel)) return;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mChannel.getMessages().add(event.getMessage());
                 ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
             }
         });
     }
 
     @EventSubscriber
-    public void onMessageSent(MessageSendEvent event) {
+    public void onMessageDelete(final MessageDeleteEvent event) {
         if(!event.getMessage().getChannel().equals(mChannel)) return;
-        mEvent = event;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mChannel.getMessages().add(((MessageSendEvent)mEvent).getMessage());
-                ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
-            }
-        });
-    }
-
-    @EventSubscriber
-    public void onMessageDelete(MessageDeleteEvent event) {
-        if(!event.getMessage().getChannel().equals(mChannel)) return;
-        mEvent = event;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mChannel.getMessages().remove(((MessageDeleteEvent)mEvent).getMessage());
+                mChannel.getMessages().remove(event.getMessage());
                 ((ChatMessageAdapter) mMessageView.getAdapter()).notifyDataSetChanged();
             }
         });
