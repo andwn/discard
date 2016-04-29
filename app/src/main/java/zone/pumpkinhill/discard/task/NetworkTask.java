@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -15,10 +16,14 @@ import java.util.Date;
 import java.util.Locale;
 
 import zone.pumpkinhill.discard.ClientHelper;
+import zone.pumpkinhill.discard.R;
+import zone.pumpkinhill.discard.activity.ChatActivity;
 import zone.pumpkinhill.discard.activity.ProfileActivity;
+import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
+import zone.pumpkinhill.discord4droid.util.MessageList;
 import zone.pumpkinhill.discord4droid.util.MissingPermissionsException;
 import zone.pumpkinhill.http.entity.ContentType;
 
@@ -28,6 +33,8 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
     private final Context mContext;
     private String mErrorMsg;
     private String[] mParams;
+
+    private MessageList mTempMsgList = null;
 
     public NetworkTask(Context context) {
         mContext = context;
@@ -41,6 +48,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
                 case "logout": ClientHelper.logout(); break;
                 case "suspend": ClientHelper.client.suspend(); break;
                 case "resume": ClientHelper.client.resume(); break;
+                case "load-messages": return doLoadMessages(params[1], params[2], params[3]);
                 case "send-message": return doSendMessage(params[1], params[2]);
                 case "send-file": return doSendFile(params[1], params[2]);
                 case "create-invite":
@@ -62,11 +70,16 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         }
     }
 
-    protected void onPostExecute(Boolean result) {
-        switch(mParams[0]) {
-            case "change-profile": ((ProfileActivity)mContext).taskFinished(result); break;
+    protected boolean doLoadMessages(String channelId, String index, String count) {
+        try {
+            Channel channel = ClientHelper.client.getChannelByID(channelId);
+            mTempMsgList = new MessageList(ClientHelper.client, channel);
+            mTempMsgList.load(Integer.parseInt(count));
+            return true;
+        } catch(HTTP429Exception e) {
+            mErrorMsg = "Failed to load messages: " + e;
+            return false;
         }
-        if(!result) Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_LONG).show();
     }
 
     protected boolean doSendMessage(String channelId, String content) {
@@ -125,5 +138,28 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
             mErrorMsg = "Error opening file to send: " + e;
         }
         return false;
+    }
+
+    protected void onPostExecute(Boolean result) {
+        try {
+            switch (mParams[0]) {
+                case "load-messages": postLoadMessages(result); break;
+                case "change-profile": ((ProfileActivity) mContext).taskFinished(result); break;
+            }
+        } catch(Exception e) {
+            mErrorMsg += " :: " + e;
+        }
+        if(!result) Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_LONG).show();
+    }
+
+    private boolean postLoadMessages(Boolean result) {
+        if(!result) return false;
+        Channel c = ClientHelper.client.getChannelByID(mParams[1]);
+        if(c == null) return true;
+        MessageList m = c.getMessages();
+        m.addAll(mTempMsgList.reverse());
+        ((ChatMessageAdapter) ((ListView) ((ChatActivity) mContext)
+                .findViewById(R.id.messageListView)).getAdapter()).notifyDataSetChanged();
+        return true;
     }
 }

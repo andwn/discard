@@ -9,15 +9,12 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
-import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class PrivateChannelAdapter extends BaseAdapter {

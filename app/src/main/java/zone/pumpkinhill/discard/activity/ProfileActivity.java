@@ -1,13 +1,18 @@
 package zone.pumpkinhill.discard.activity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import java.io.IOException;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
@@ -21,7 +26,7 @@ public class ProfileActivity extends BaseActivity {
 
     private NetworkTask mSaveTask = null;
     private User mUser;
-    private Bitmap mNewAvatar;
+    private Bitmap mNewAvatar = null;
     private View mProgressView, mFormView;
 
     @Override
@@ -63,8 +68,16 @@ public class ProfileActivity extends BaseActivity {
             final EditText confirmBox = (EditText) findViewById(R.id.confirmPassword);
             nameBox.setHint(mUser.getName());
             emailBox.setHint(ClientHelper.client.getEmail());
-            // TODO: Set onClick for avatar (pick new avatar image)
-
+            // Set onClick for avatar (pick new avatar image)
+            avatarView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT, null);
+                    i.setType("image/*");
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    startActivityForResult(i, FILE_SELECT_CODE);
+                }
+            });
             // Set onClick for save button
             Button saveButton = (Button) findViewById(R.id.saveButton);
             saveButton.setOnClickListener(new View.OnClickListener() {
@@ -92,6 +105,21 @@ public class ProfileActivity extends BaseActivity {
             getLayoutInflater().inflate(R.layout.profile_others,
                     (ViewGroup) findViewById(R.id.optionContainer));
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == FILE_SELECT_CODE && resultCode == RESULT_OK) {
+            Uri uri = data.getData();
+            try {
+                mNewAvatar = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
+                ImageView avatarView = (ImageView) findViewById(R.id.profAvatar);
+                avatarView.setImageBitmap(mNewAvatar);
+            } catch(IOException e) {
+                Toast.makeText(mContext, "Error loading image: " + e, Toast.LENGTH_LONG).show();
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private User findUser(String id) {

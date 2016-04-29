@@ -3,13 +3,10 @@ package zone.pumpkinhill.discard.activity;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
-import android.support.v7.app.ActionBar;
-import android.view.MenuItem;
 
 import java.util.List;
 

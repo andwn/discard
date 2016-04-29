@@ -16,6 +16,8 @@ import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 
 public abstract class BaseActivity extends AppCompatActivity {
+    protected final static int FILE_SELECT_CODE = 0;
+
     protected final Context mContext = this;
 
     protected boolean isAppInBackground;

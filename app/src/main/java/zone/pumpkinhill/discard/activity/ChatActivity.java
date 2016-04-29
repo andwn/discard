@@ -7,8 +7,6 @@ import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -27,7 +25,6 @@ import zone.pumpkinhill.discard.adapter.PrivateChannelAdapter;
 import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
 import zone.pumpkinhill.discard.adapter.UserListAdapter;
 import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
-import zone.pumpkinhill.discard.task.LoadMessagesTask;
 import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
@@ -41,8 +38,6 @@ import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class ChatActivity extends BaseActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
-
-    private static final int FILE_SELECT_CODE = 0;
 
     private Context mContext = this;
     private Guild mGuild;
@@ -110,7 +105,7 @@ public class ChatActivity extends BaseActivity {
             }
             // Drawer
             ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
-            drIcon.setImageBitmap(ClientHelper.getImageFromCache(mGuild.getIconURL()));
+            drIcon.setImageBitmap(ClientHelper.getAvatarFromCache(mGuild.getIconURL()));
             TextView drName = (TextView) findViewById(R.id.guildName);
             drName.setText(mGuild.getName());
             // Setup adapter for text channel list
@@ -144,7 +139,8 @@ public class ChatActivity extends BaseActivity {
                 public void onClick(View v) {
                     EditText msg = (EditText) findViewById(R.id.editMessage);
                     if(msg == null || msg.getText().toString().isEmpty()) return;
-                    new NetworkTask(mContext).execute("send-message", mChannel.getID(), msg.getText().toString());
+                    new NetworkTask(mContext).execute("send-message",
+                            mChannel.getID(), msg.getText().toString());
                     msg.setText("");
                 }
             });
@@ -168,7 +164,7 @@ public class ChatActivity extends BaseActivity {
         mChannel = newChannel;
         ClientHelper.setActiveChannel(newChannel);
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new LoadMessagesTask(mChannel.getMessages(), mMessageView).execute(mChannel.getID());
+        new NetworkTask(mContext).execute("load-messages", mChannel.getID(), "0", "100");
         setTitle(mChannel.getName());
     }
 
