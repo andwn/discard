@@ -3,15 +3,11 @@ package zone.pumpkinhill.discard.adapter;
 import android.content.Context;
 import android.text.Html;
 import android.text.Spanned;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.commonsware.cwac.anddown.AndDown;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -70,7 +66,7 @@ public class ChatMessageAdapter extends DiscordAdapter {
         Message msg = mMessages.get(pos);
         // Try loading message author's avatar from cache, or start to download it
         ImageView avatar = (ImageView) view.findViewById(R.id.avatarImageView);
-        getAvatarOrIcon(avatar, msg.getAuthor().getAvatarURL());
+        getAvatarOrIcon(avatar, msg.getAuthor().getID(), msg.getAuthor().getAvatarURL());
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.nameTextView);
         name.setText(msg.getAuthor().getName());
@@ -114,7 +110,7 @@ public class ChatMessageAdapter extends DiscordAdapter {
             // No thumbnails -- check for image URLs in message content
             String[] links = extractLinks(msg.getContent());
             for(String link : links) {
-                if(getLinkImage(attachment, link)) {
+                if(getLinkImage(attachment, msg.getID(), link)) {
                     attachment.setOnClickListener(new ThumbnailOnClickListener(link));
                     attachment.setOnLongClickListener(new ThumbnailOnLongClickListener(link));
                     break;

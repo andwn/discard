@@ -1,5 +1,7 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
+import android.util.Log;
+
 /**
  * Represents an attachment included in the message.
  */
@@ -32,6 +34,7 @@ public class Attachment {
         this.filesize = filesize;
         this.id = id;
         this.url = url;
+        Log.d("Att", "ID: " + id);
     }
 
     /**

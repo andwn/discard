@@ -14,10 +14,9 @@ import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 
 public class ClientHelper {
     public static DiscordClient client = null;
+    public static ImageCache cache = null;
     private static EventDispatcher mDispatcher = null;
     private static ArrayList<Object> mSubscribers = new ArrayList<>();
-    private static HashMap<String, Bitmap> mAvatarCache = new HashMap<>();
-    private static HashMap<String, Bitmap> mImageCache = new HashMap<>();
     private static Channel mActiveChannel = null;
 
     // Login/Logout
@@ -64,25 +63,6 @@ public class ClientHelper {
         if(subscriber == null) return;
         mSubscribers.remove(subscriber);
         if(mDispatcher != null) mDispatcher.unregisterListener(subscriber);
-    }
-
-    // Avatars
-    public static Bitmap getAvatarFromCache(String url) {
-        return mAvatarCache.get(url);
-    }
-    public static void addAvatarToCache(String url, Bitmap avatar) {
-        mAvatarCache.put(url, avatar);
-    }
-    // Images
-    public static Bitmap getImageFromCache(String url) {
-        return mImageCache.get(url);
-    }
-    public static void addImageToCache(String url, Bitmap avatar) {
-        mImageCache.put(url, avatar);
-    }
-    public static void purgeImageCache() {
-        for(Bitmap b : mImageCache.values()) b.recycle();
-        mImageCache.clear();
     }
 
     // User/Channel

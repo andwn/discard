@@ -98,7 +98,7 @@ public class ChatActivity extends BaseActivity {
                 mChannel = mGuild.getChannelByID(channelId);
             }
             // Drawer
-            drIcon.setImageBitmap(ClientHelper.getAvatarFromCache(mGuild.getIconURL()));
+            drIcon.setImageBitmap(ClientHelper.cache.get(mGuild.getID()));
             drName.setText(mGuild.getName());
             // Setup adapter for text channel list
             textChannels.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));

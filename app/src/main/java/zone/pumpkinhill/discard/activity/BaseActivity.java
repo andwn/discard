@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 
 import zone.pumpkinhill.discard.ClientHelper;
+import zone.pumpkinhill.discard.ImageCache;
 import zone.pumpkinhill.discard.R;
 
 public abstract class BaseActivity extends AppCompatActivity {
@@ -27,6 +28,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         isAppInBackground = false;
+        if(ClientHelper.cache == null) {
+            ClientHelper.cache = new ImageCache(mContext);
+        }
     }
 
     @Override

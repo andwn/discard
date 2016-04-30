@@ -22,8 +22,6 @@ import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.util.ImageHelper;
 
 public class ProfileActivity extends BaseActivity {
-    private final static String TAG = ProfileActivity.class.getCanonicalName();
-
     private NetworkTask mSaveTask = null;
     private User mUser;
     private Bitmap mNewAvatar = null;
@@ -51,9 +49,10 @@ public class ProfileActivity extends BaseActivity {
         setTitle(mUser.getName() + " #" + mUser.getDiscriminator());
         // Avatar
         ImageView avatarView = (ImageView) findViewById(R.id.profAvatar);
-        Bitmap avatar = ClientHelper.getAvatarFromCache(mUser.getAvatarURL());
+        assert avatarView != null;
+        Bitmap avatar = ClientHelper.cache.get(mUser.getID());
         if(avatar == null) {
-            new ImageDownloaderTask(avatarView, true).execute(mUser.getAvatarURL());
+            new ImageDownloaderTask(avatarView).execute(mUser.getID(), mUser.getAvatarURL());
         } else {
             avatarView.setImageBitmap(avatar);
         }
@@ -66,6 +65,10 @@ public class ProfileActivity extends BaseActivity {
             final EditText emailBox = (EditText) findViewById(R.id.changeEmail);
             final EditText passwordBox = (EditText) findViewById(R.id.changePassword);
             final EditText confirmBox = (EditText) findViewById(R.id.confirmPassword);
+            assert nameBox != null;
+            assert emailBox != null;
+            assert passwordBox != null;
+            assert confirmBox != null;
             nameBox.setHint(mUser.getName());
             emailBox.setHint(ClientHelper.client.getEmail());
             // Set onClick for avatar (pick new avatar image)
@@ -80,6 +83,7 @@ public class ProfileActivity extends BaseActivity {
             });
             // Set onClick for save button
             Button saveButton = (Button) findViewById(R.id.saveButton);
+            assert saveButton != null;
             saveButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -114,6 +118,7 @@ public class ProfileActivity extends BaseActivity {
             try {
                 mNewAvatar = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
                 ImageView avatarView = (ImageView) findViewById(R.id.profAvatar);
+                assert avatarView != null;
                 avatarView.setImageBitmap(mNewAvatar);
             } catch(IOException e) {
                 Toast.makeText(mContext, "Error loading image: " + e, Toast.LENGTH_LONG).show();

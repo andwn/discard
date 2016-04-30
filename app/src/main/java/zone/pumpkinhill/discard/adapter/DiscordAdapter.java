@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
-import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.BaseAdapter;
@@ -21,8 +20,6 @@ import android.widget.Toast;
 import com.commonsware.cwac.anddown.AndDown;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -46,11 +43,11 @@ public abstract class DiscordAdapter extends BaseAdapter {
         mPref = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
-    protected static boolean getAvatarOrIcon(ImageView view, String url) {
-        Bitmap b = ClientHelper.getAvatarFromCache(url);
+    protected static boolean getAvatarOrIcon(ImageView view, String id, String url) {
+        Bitmap b = ClientHelper.cache.get(id);
         if(b == null) {
             view.setImageResource(android.R.drawable.ic_menu_gallery);
-            new ImageDownloaderTask(view, true).execute(url);
+            new ImageDownloaderTask(view).execute(id, url);
         } else {
             view.setImageBitmap(b);
         }
@@ -60,14 +57,14 @@ public abstract class DiscordAdapter extends BaseAdapter {
     protected static boolean getThumbnail(ImageView view, Attachment attachment) {
         String thumbURL = attachment.getThumbnailURL();
         if(thumbURL != null && !thumbURL.isEmpty()) {
-            return getAvatarOrIcon(view, thumbURL);
+            return getAvatarOrIcon(view, attachment.getId(), thumbURL);
         } else {
-            return getLinkImage(view, attachment.getUrl());
+            return getLinkImage(view, attachment.getId(), attachment.getUrl());
         }
     }
 
-    protected static boolean getLinkImage(ImageView view, String url) {
-        return isImageFilename(url) && getAvatarOrIcon(view, url);
+    protected static boolean getLinkImage(ImageView view, String id, String url) {
+        return isImageFilename(url) && getAvatarOrIcon(view, id, url);
     }
 
     protected static boolean isImageFilename(String text) {
@@ -135,21 +132,12 @@ public abstract class DiscordAdapter extends BaseAdapter {
                 Toast.makeText(mContext, "Need permission", Toast.LENGTH_LONG).show();
                 return true;
             }
-            try {
-                // FIXME: Change image cache to save original format and not bitmap
-                String filename = mURL.substring(mURL.lastIndexOf("/") + 1, mURL.lastIndexOf("."));
-                if(filename.length() > 32) filename = filename.substring(0, 32);
-                filename += ".png";
-                File file = new File(discardDir, filename);
-                FileOutputStream f = new FileOutputStream(file);
-                Bitmap bmp = ClientHelper.getImageFromCache(mURL);
-                bmp.compress(Bitmap.CompressFormat.PNG, 100, f);
-                f.close();
-                Toast.makeText(mContext, "Saved to " + discardDir.toString(), Toast.LENGTH_LONG)
-                        .show();
-            } catch(IOException e) {
-                Toast.makeText(mContext, "Error: " + e, Toast.LENGTH_LONG).show();
-            }
+            // Finally download the image in the background and save it to the pictures folder
+            String filename = mURL.substring(mURL.lastIndexOf("/") + 1);
+            File file = new File(discardDir, filename);
+            new ImageDownloaderTask((ImageView) v).execute(null, mURL, file.getAbsolutePath());
+            Toast.makeText(mContext, "Saving to " + discardDir.toString(), Toast.LENGTH_LONG)
+                    .show();
             return true;
         }
     }

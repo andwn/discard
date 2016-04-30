@@ -8,14 +8,16 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import zone.pumpkinhill.discard.ClientHelper;
-import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.http.HttpStatus;
 
 /**
@@ -26,65 +28,59 @@ import zone.pumpkinhill.http.HttpStatus;
 public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
     private final static String TAG = ImageDownloaderTask.class.getCanonicalName();
 
-    private static LinkedBlockingQueue<ImageDownloaderTask> ActiveTasks = new LinkedBlockingQueue<>();
+    private static CopyOnWriteArrayList<ImageDownloaderTask> ActiveTasks = new CopyOnWriteArrayList<>();
 
-    private String mURL;
-    private boolean mIsAvatar;
+    private String mID, mURL, mFile;
     private boolean mIsDownloading;
     private final Drawable mOldDrawable;
     private final WeakReference<ImageView> mImageViewReference;
 
-    public ImageDownloaderTask(ImageView imageView, boolean isAvatar) {
+    public ImageDownloaderTask(ImageView imageView) {
         mIsDownloading = false;
         mImageViewReference = new WeakReference<>(imageView);
         mOldDrawable = imageView.getDrawable();
-        mIsAvatar = isAvatar;
     }
 
     @Override
     protected Bitmap doInBackground(String... params) {
-        return downloadBitmap(params[0]);
+        mFile = params.length > 2 ? params[2] : null;
+        return downloadBitmap(params[0], params[1]);
     }
 
     @Override
     protected void onPostExecute(Bitmap bitmap) {
-        if (isCancelled()) {
+        if(mFile != null) return;
+        if(isCancelled()) {
             bitmap = null;
         }
         mIsDownloading = false;
         ActiveTasks.remove(this);
-        if (mImageViewReference.get() != null) {
+        if(mImageViewReference.get() != null) {
             ImageView imageView = mImageViewReference.get();
-            if (imageView != null) {
+            if(imageView != null && bitmap != null) {
+                ClientHelper.cache.put(mID, bitmap);
                 // Compare the old drawable (from before the download started) to the one in the
                 // view now to make sure they match. If they don't, that means the user has scrolled
                 // fast enough that our view has wrapped around the screen and is showing a
                 // different message. So just cache the image without setting it to the view.
-                if(mOldDrawable != null && !imageView.getDrawable().equals(mOldDrawable)) {
-                    if (bitmap != null) ClientHelper.addImageToCache(mURL, bitmap);
-                    return;
-                }
-                if (bitmap != null) {
-                    if(mIsAvatar) ClientHelper.addAvatarToCache(mURL, bitmap);
-                    else ClientHelper.addImageToCache(mURL, bitmap);
+                if(mOldDrawable != null && imageView.getDrawable().equals(mOldDrawable)) {
                     imageView.setImageBitmap(bitmap);
-                } else {
-                    // The download failed so make it a camera or something
-                    Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.ic_menu_camera);
-                    imageView.setImageDrawable(placeholder);
                 }
             }
         }
     }
 
-    private Bitmap downloadBitmap(String url) {
+    private Bitmap downloadBitmap(String id, String url) {
         // Let's not download the same image 12 times
-        for(ImageDownloaderTask task : ActiveTasks) {
-            if(task.getURL().equals(url)) return waitForAnotherTask(task);
+        if(mFile == null) {
+            for (ImageDownloaderTask task : ActiveTasks) {
+                if (task.getURL().equals(url)) return waitForAnotherTask(task);
+            }
+            mID = id;
+            mURL = url;
+            mIsDownloading = true;
+            ActiveTasks.add(this);
         }
-        mURL = url;
-        mIsDownloading = true;
-        ActiveTasks.add(this);
         HttpURLConnection urlConnection = null;
         try {
             URL uri = new URL(url);
@@ -95,7 +91,24 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
             }
 
             InputStream inputStream = urlConnection.getInputStream();
-            if (inputStream == null) return null;
+            if(inputStream == null) return null;
+            // Save downloaded image to file
+            if(mFile != null) {
+                File file = new File(mFile);
+                if(!file.exists()) {
+                    OutputStream outputStream = new FileOutputStream(file);
+                    // Just like I'm really using C again
+                    byte[] buffer = new byte[4096];
+                    int n;
+                    while((n = inputStream.read(buffer)) > 0) {
+                        outputStream.write(buffer, 0, n);
+                    }
+                    outputStream.close();
+                } else {
+                    Log.d(TAG, "File already exists: " + file.getName());
+                }
+                return null;
+            }
             // Shrink bitmap if it is very big
             Bitmap fullSize = BitmapFactory.decodeStream(inputStream);
             if(fullSize.getHeight() > 700) {
@@ -108,12 +121,9 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
                 return fullSize;
             }
         } catch (Exception e) {
-            //if(urlConnection != null) urlConnection.disconnect();
             Log.w(TAG, "Error downloading image from " + url);
         } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
+            if(urlConnection != null) urlConnection.disconnect();
         }
         return null;
     }
@@ -123,7 +133,7 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
             while (task.isDownloading()) {
                 Thread.sleep(200, 0);
             }
-            return ClientHelper.getImageFromCache(task.getURL());
+            return ClientHelper.cache.get(task.getID());
         } catch(InterruptedException e) {
             Log.w(TAG, "Wait thread interrupted.");
             return null;
@@ -145,6 +155,10 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
                 bm, 0, 0, width, height, matrix, false);
         bm.recycle();
         return resizedBitmap;
+    }
+
+    public String getID() {
+        return mID;
     }
 
     public String getURL() {
