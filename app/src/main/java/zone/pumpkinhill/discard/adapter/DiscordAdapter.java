@@ -1,0 +1,142 @@
+package zone.pumpkinhill.discard.adapter;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+import zone.pumpkinhill.discard.ClientHelper;
+import zone.pumpkinhill.discard.task.ImageDownloaderTask;
+import zone.pumpkinhill.discord4droid.handle.obj.Attachment;
+
+public abstract class DiscordAdapter extends BaseAdapter {
+    protected final Context mContext;
+    protected final LayoutInflater mInflater;
+    protected final static SimpleDateFormat
+            TodayFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH),
+            OldFormat = new SimpleDateFormat("MMM dd hh:mm a", Locale.ENGLISH);
+    protected final SharedPreferences mPref;
+
+    public DiscordAdapter(Context context) {
+        mContext = context;
+        mInflater = LayoutInflater.from(context);
+        mPref = PreferenceManager.getDefaultSharedPreferences(context);
+    }
+
+    protected static boolean getAvatarOrIcon(ImageView view, String url) {
+        Bitmap b = ClientHelper.getAvatarFromCache(url);
+        if(b == null) {
+            view.setImageResource(android.R.drawable.ic_menu_gallery);
+            new ImageDownloaderTask(view, true).execute(url);
+        } else {
+            view.setImageBitmap(b);
+        }
+        return true;
+    }
+
+    protected static boolean getThumbnail(ImageView view, Attachment attachment) {
+        String thumbURL = attachment.getThumbnailURL();
+        if(thumbURL != null && !thumbURL.isEmpty()) {
+            return getAvatarOrIcon(view, thumbURL);
+        } else {
+            return getLinkImage(view, attachment.getUrl());
+        }
+    }
+
+    protected static boolean getLinkImage(ImageView view, String url) {
+        return isImageFilename(url) && getAvatarOrIcon(view, url);
+    }
+
+    protected static boolean isImageFilename(String text) {
+        return text.toLowerCase().endsWith(".jpg") ||
+                text.toLowerCase().endsWith(".jpeg") ||
+                text.toLowerCase().endsWith(".png") ||
+                text.toLowerCase().endsWith(".gif") ||
+                // Twitter sucks tbh
+                text.toLowerCase().endsWith(".jpg:orig") ||
+                text.toLowerCase().endsWith(".jpg:large");
+    }
+
+    protected class ThumbnailOnClickListener implements View.OnClickListener {
+        private final String mURL;
+        public ThumbnailOnClickListener(String url) {
+            mURL = url;
+        }
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.parse(mURL), "image/*");
+            mContext.startActivity(intent);
+        }
+    }
+
+    protected class ThumbnailOnLongClickListener implements View.OnLongClickListener {
+        private final String mURL;
+        public ThumbnailOnLongClickListener(String url) {
+            mURL = url;
+        }
+        @Override
+        public boolean onLongClick(View v) {
+            // Make sure SD card is mounted
+            if(!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())){
+                Toast.makeText(mContext, "External SD card not mounted", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            // Get permission from user if we don't already have it
+            if(ActivityCompat.checkSelfPermission(
+                    mContext, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        (Activity)mContext,
+                        new String[] {
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        }, 1);
+            }
+            // Save to <data>/Pictures/Discard
+            File picturesDir = new File(Environment.getExternalStorageDirectory(),
+                    Environment.DIRECTORY_PICTURES);
+            File discardDir = new File(picturesDir, "Discard");
+            // Double check permissions (user denied) and make directory if it doesn't exist
+            if(!(discardDir.exists() || discardDir.mkdir())) {
+                Toast.makeText(mContext, "Need permission", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            try {
+                // FIXME: Change image cache to save original format and not bitmap
+                String filename = mURL.substring(mURL.lastIndexOf("/") + 1, mURL.lastIndexOf("."));
+                if(filename.length() > 32) filename = filename.substring(0, 32);
+                filename += ".png";
+                File file = new File(discardDir, filename);
+                FileOutputStream f = new FileOutputStream(file);
+                Bitmap bmp = ClientHelper.getImageFromCache(mURL);
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, f);
+                f.close();
+                Toast.makeText(mContext, "Saved to " + discardDir.toString(), Toast.LENGTH_LONG)
+                        .show();
+            } catch(IOException e) {
+                Toast.makeText(mContext, "Error: " + e, Toast.LENGTH_LONG).show();
+            }
+            return true;
+        }
+    }
+}

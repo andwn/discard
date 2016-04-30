@@ -138,7 +138,14 @@ public class DiscordUtils {
         List<Attachment> attachments = new ArrayList<>();
         if (json.attachments != null)
             for (MessageResponse.AttachmentResponse response : json.attachments) {
-                attachments.add(new Attachment(response.filename, response.size, response.id, response.url));
+                Attachment a = new Attachment(response.filename, response.size, response.id, response.url);
+                for(MessageResponse.EmbedResponse e : json.embeds) {
+                    if(e.thumbnail != null && e.thumbnail.proxy_url != null) {
+                        a.setThumbnailURL(e.thumbnail.proxy_url);
+                        break;
+                    }
+                }
+                attachments.add(a);
             }
 
         return attachments;

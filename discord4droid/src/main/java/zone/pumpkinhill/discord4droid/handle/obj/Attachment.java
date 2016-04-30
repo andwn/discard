@@ -25,6 +25,8 @@ public class Attachment {
      */
     protected final String url;
 
+    protected String thumbnailUrl;
+
     public Attachment(String filename, int filesize, String id, String url) {
         this.filename = filename;
         this.filesize = filesize;
@@ -66,6 +68,14 @@ public class Attachment {
      */
     public String getUrl() {
         return url;
+    }
+
+    public void setThumbnailURL(String url) {
+        thumbnailUrl = url;
+    }
+
+    public String getThumbnailURL() {
+        return thumbnailUrl;
     }
 }
 

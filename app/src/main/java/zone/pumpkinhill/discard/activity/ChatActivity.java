@@ -22,13 +22,8 @@ import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
-import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
-import zone.pumpkinhill.discard.adapter.PrivateChannelAdapter;
-import zone.pumpkinhill.discard.adapter.TextChannelAdapter;
-import zone.pumpkinhill.discard.adapter.UserListAdapter;
-import zone.pumpkinhill.discard.adapter.VoiceChannelAdapter;
+import zone.pumpkinhill.discard.adapter.*;
 import zone.pumpkinhill.discard.task.NetworkTask;
-import zone.pumpkinhill.discord4droid.api.Event;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
@@ -46,7 +41,6 @@ public class ChatActivity extends BaseActivity {
     private List<Channel> mChannelList;
     private Channel mChannel;
     private ListView mMessageView;
-    private boolean mIsPrivate;
     private DrawerLayout mLayout;
     private NetworkTask mLoadTask = null;
 
@@ -54,14 +48,26 @@ public class ChatActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        // Enable MenuItems that should be usable from chat
         showMenuProfile = true;
+        // Get the layouts and views
         mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
+        ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
+        TextView drName = (TextView) findViewById(R.id.guildName);
+        ListView textChannels = (ListView) findViewById(R.id.textChannelList);
+        ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
+        // Make sure they aren't null
+        assert drIcon != null;
+        assert drName != null;
+        assert textChannels != null;
+        assert voiceChannels != null;
+        // Subscribe to message events so things can be updated in real time
         ClientHelper.subscribe(this);
+        // Grab intent parameters, which guild and channel to focus
         String guildId = getIntent().getExtras().getString("guildId");
         String channelId = getIntent().getExtras().getString("channelId");
         if(guildId == null || guildId.equals("0")) {
-            // Private chat
-            mIsPrivate = true;
+            // No guild given -- this is a private chat
             mChannelList = new ArrayList<>();
             for(Channel c : ClientHelper.client.getChannels(true)) {
                 if(c == null || !(c instanceof PrivateChannel)) continue;
@@ -73,27 +79,14 @@ public class ChatActivity extends BaseActivity {
                 return;
             }
             // Setup drawer
-            ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageResource(R.drawable.ic_menu_camera);
-            TextView drName = (TextView) findViewById(R.id.guildName);
             drName.setText("Direct Messages");
             // Setup adapter for text channel list
-            ListView textChannels = (ListView) findViewById(R.id.textChannelList);
             textChannels.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
-            // Setup onItemClick for text channel list
-            textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    switchChannel((Channel) parent.getAdapter().getItem(position));
-                    mLayout.closeDrawers();
-                }
-            });
             // Disable the user list drawer
-            ((DrawerLayout) findViewById(R.id.chatActivity))
-                    .setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
+            mLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
         } else {
             // Guild
-            mIsPrivate = false;
             mGuild = ClientHelper.client.getGuildByID(guildId);
             if (mGuild == null) {
                 Log.e(TAG, "Something went wrong passing the guild ID to chat activity.");
@@ -105,46 +98,51 @@ public class ChatActivity extends BaseActivity {
                 mChannel = mGuild.getChannelByID(channelId);
             }
             // Drawer
-            ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
             drIcon.setImageBitmap(ClientHelper.getAvatarFromCache(mGuild.getIconURL()));
-            TextView drName = (TextView) findViewById(R.id.guildName);
             drName.setText(mGuild.getName());
             // Setup adapter for text channel list
-            ListView textChannels = (ListView) findViewById(R.id.textChannelList);
             textChannels.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));
-            // Setup onItemClick for text channel list
-            textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    switchChannel((Channel) parent.getAdapter().getItem(position));
-                    mLayout.closeDrawers();
-                }
-            });
             // Setup adapter for voice channel list
-            ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
             // Setup user list drawer
             ListView online = (ListView) findViewById(R.id.onlineUserList);
             ListView offline = (ListView) findViewById(R.id.offlineUserList);
+            assert online != null;
+            assert offline != null;
             online.setAdapter(new UserListAdapter(mContext, mGuild, true));
             offline.setAdapter(new UserListAdapter(mContext, mGuild, false));
         }
+        // Setup onItemClick for text channel list
+        textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                switchChannel((Channel) parent.getAdapter().getItem(position));
+                mLayout.closeDrawers();
+            }
+        });
         // Fill in message list
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
         // Setup OnScrollListener to check for scrolling to the top
         mMessageView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            private int currentScrollState = SCROLL_STATE_IDLE,
+                    currentFirstVisible = 0, currentVisibleCount = 0;
             @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {}
-            @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if(firstVisibleItem > 0) return;
-                if (mLoadTask == null || mLoadTask.getStatus() == AsyncTask.Status.FINISHED) {
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                currentScrollState = scrollState;
+                if(currentVisibleCount == 0 || currentFirstVisible > 0) return;
+                if(currentScrollState != SCROLL_STATE_IDLE) return;
+                if(mLoadTask == null || mLoadTask.getStatus() == AsyncTask.Status.FINISHED) {
                     mLoadTask = new NetworkTask(mContext);
                     mLoadTask.execute("load-messages", mChannel.getID(), "20",
                             mChannel.getMessages().getEarliest().getID());
                 }
+            }
+            @Override
+            public void onScroll(AbsListView view, int firstVisible, int visibleCount, int totalCount) {
+                currentFirstVisible = firstVisible;
+                currentVisibleCount = visibleCount;
             }
         });
         // Send message button
@@ -192,6 +190,7 @@ public class ChatActivity extends BaseActivity {
     public void finish() {
         super.finish();
         ClientHelper.unsubscribe(this);
+        ClientHelper.unsubscribe(mMessageView.getAdapter());
         ClientHelper.setActiveChannel(null);
     }
 
@@ -213,6 +212,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onMessageReceived(final MessageReceivedEvent event) {
         if(!event.getMessage().getChannel().equals(mChannel)) return;
         runOnUiThread(new Runnable() {
@@ -229,6 +229,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onMessageSent(final MessageSendEvent event) {
         if(!event.getMessage().getChannel().equals(mChannel)) return;
         runOnUiThread(new Runnable() {
@@ -241,6 +242,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onMessageDelete(final MessageDeleteEvent event) {
         if(!event.getMessage().getChannel().equals(mChannel)) return;
         runOnUiThread(new Runnable() {
@@ -254,6 +256,7 @@ public class ChatActivity extends BaseActivity {
 
     // This is to refresh the channel after resuming from suspend (and reconnecting websocket)
     @EventSubscriber
+    @SuppressWarnings("unused")
     public void onReady(ReadyEvent event) {
         runOnUiThread(new Runnable() {
             @Override
