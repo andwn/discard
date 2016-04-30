@@ -11,11 +11,14 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.commonsware.cwac.anddown.AndDown;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,11 +31,13 @@ import zone.pumpkinhill.discard.task.ImageDownloaderTask;
 import zone.pumpkinhill.discord4droid.handle.obj.Attachment;
 
 public abstract class DiscordAdapter extends BaseAdapter {
-    protected final Context mContext;
-    protected final LayoutInflater mInflater;
+    protected final static AndDown Markdown = new AndDown();
     protected final static SimpleDateFormat
             TodayFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH),
             OldFormat = new SimpleDateFormat("MMM dd hh:mm a", Locale.ENGLISH);
+
+    protected final Context mContext;
+    protected final LayoutInflater mInflater;
     protected final SharedPreferences mPref;
 
     public DiscordAdapter(Context context) {
@@ -73,6 +78,15 @@ public abstract class DiscordAdapter extends BaseAdapter {
                 // Twitter sucks tbh
                 text.toLowerCase().endsWith(".jpg:orig") ||
                 text.toLowerCase().endsWith(".jpg:large");
+    }
+
+    // Trims trailing whitespace
+    protected static CharSequence trimEnd(CharSequence source) {
+        if(source == null) return "";
+        int i = source.length();
+        // loop back to the first non-whitespace character
+        while(--i >= 0 && Character.isWhitespace(source.charAt(i))) {}
+        return source.subSequence(0, i+1);
     }
 
     protected class ThumbnailOnClickListener implements View.OnClickListener {

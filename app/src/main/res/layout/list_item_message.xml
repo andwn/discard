@@ -58,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:id="@+id/messageTextView"
+            android:id="@+id/messageContent"
             android:textColor="#222222"
             android:linksClickable="true"
             android:autoLink="web" />

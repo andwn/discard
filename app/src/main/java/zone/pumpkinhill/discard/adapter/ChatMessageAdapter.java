@@ -1,11 +1,17 @@
 package zone.pumpkinhill.discard.adapter;
 
 import android.content.Context;
+import android.text.Html;
+import android.text.Spanned;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.commonsware.cwac.anddown.AndDown;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -79,14 +85,16 @@ public class ChatMessageAdapter extends DiscordAdapter {
             timestamp.setText(timeStr);
         }
         // Message content and formatting
-        TextView content = (TextView) view.findViewById(R.id.messageTextView);
+        TextView content = (TextView) view.findViewById(R.id.messageContent);
         String contentStr = msg.getContent();
         List<User> mentions = msg.getMentions();
         for(User u : mentions) {
             if(u == null) continue; // I actually got an NPE here...
             contentStr = contentStr.replaceAll("<@" + u.getID() + ">", "@" + u.getName());
         }
-        content.setText(contentStr);
+        String contentHtml = Markdown.markdownToHtml(contentStr);
+        Spanned spanned = Html.fromHtml(contentHtml);
+        content.setText(trimEnd(spanned));
         // Attachment
         ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
         // Clear anything that might have been left over
