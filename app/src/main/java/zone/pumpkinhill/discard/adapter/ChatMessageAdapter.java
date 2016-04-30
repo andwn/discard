@@ -289,6 +289,6 @@ public class ChatMessageAdapter extends BaseAdapter {
 
     @Override
     public boolean isEmpty() {
-        return mMessages.isEmpty();
+        return mMessages.size() == 0;
     }
 }

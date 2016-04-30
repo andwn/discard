@@ -48,7 +48,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
                 case "logout": ClientHelper.logout(); break;
                 case "suspend": ClientHelper.client.suspend(); break;
                 case "resume": ClientHelper.client.resume(); break;
-                case "load-messages": return doLoadMessages(params[1], params[2], params[3], params[4]);
+                case "load-messages": return doLoadMessages(params[1], params[2], params[3]);
                 case "ack-message" : ClientHelper.client.ackMessage(params[1], params[2]); break;
                 case "send-message": return doSendMessage(params[1], params[2]);
                 case "send-file": return doSendFile(params[1], params[2]);
@@ -71,13 +71,13 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         }
     }
 
-    protected boolean doLoadMessages(String channelId, String before, String after, String count) {
+    protected boolean doLoadMessages(String channelId, String count, String before) {
         try {
             Channel channel = ClientHelper.client.getChannelByID(channelId);
             mTempMsgList = new MessageList(ClientHelper.client, channel);
-            mTempMsgList.load(Integer.parseInt(count));
+            mTempMsgList.load(Integer.parseInt(count), before);
             return true;
-        } catch(HTTP429Exception e) {
+        } catch(HTTP429Exception | DiscordException | MissingPermissionsException e) {
             mErrorMsg = "Failed to load messages: " + e;
             return false;
         }
@@ -162,7 +162,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         ((ChatMessageAdapter) ((ListView) ((ChatActivity) mContext)
                 .findViewById(R.id.messageListView)).getAdapter()).notifyDataSetChanged();
         if(mParams[2] == null && mParams[3] == null) {
-            new NetworkTask(mContext).execute("ack-message", c.getID(), m.getLatestMessage().getID());
+            new NetworkTask(mContext).execute("ack-message", c.getID(), m.getLatest().getID());
         }
         return true;
     }

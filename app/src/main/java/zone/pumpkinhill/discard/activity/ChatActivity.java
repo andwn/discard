@@ -3,11 +3,13 @@ package zone.pumpkinhill.discard.activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -46,6 +48,7 @@ public class ChatActivity extends BaseActivity {
     private ListView mMessageView;
     private boolean mIsPrivate;
     private DrawerLayout mLayout;
+    private NetworkTask mLoadTask = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +133,20 @@ public class ChatActivity extends BaseActivity {
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
+        // Setup OnScrollListener to check for scrolling to the top
+        mMessageView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {}
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if(firstVisibleItem > 0) return;
+                if (mLoadTask == null || mLoadTask.getStatus() == AsyncTask.Status.FINISHED) {
+                    mLoadTask = new NetworkTask(mContext);
+                    mLoadTask.execute("load-messages", mChannel.getID(), "20",
+                            mChannel.getMessages().getEarliest().getID());
+                }
+            }
+        });
         // Send message button
         ImageButton sendButton = (ImageButton) findViewById(R.id.sendButton);
         if(sendButton != null) {
@@ -163,7 +180,11 @@ public class ChatActivity extends BaseActivity {
         mChannel = newChannel;
         ClientHelper.setActiveChannel(newChannel);
         mMessageView.setAdapter(new ChatMessageAdapter(mContext, mChannel.getMessages()));
-        new NetworkTask(mContext).execute("load-messages", mChannel.getID(), null, null, "50");
+        if(mLoadTask != null && mLoadTask.getStatus() != AsyncTask.Status.FINISHED) {
+            mLoadTask.cancel(true);
+        }
+        mLoadTask = new NetworkTask(mContext);
+        mLoadTask.execute("load-messages", mChannel.getID(), "20", null);
         setTitle(mChannel.getName());
     }
 
