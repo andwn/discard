@@ -13,12 +13,12 @@
 
     <SwitchPreference
         android:defaultValue="true"
-        android:key="preload_links"
-        android:title="Preload images in links" />
+        android:key="preload_attachments"
+        android:title="Preload images in attachments" />
 
     <SwitchPreference
         android:defaultValue="true"
-        android:key="preload_attachments"
-        android:title="Preload images in attachments" />
+        android:key="preload_links"
+        android:title="Preload images in links" />
 
 </PreferenceScreen>

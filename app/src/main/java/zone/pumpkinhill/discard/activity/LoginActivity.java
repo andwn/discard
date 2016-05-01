@@ -42,6 +42,7 @@ public class LoginActivity extends BaseActivity {
             finish();
             return;
         }
+        NotifiedChannels.clear();
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mServerView = (EditText) findViewById(R.id.server);

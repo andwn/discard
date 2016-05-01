@@ -5,22 +5,30 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.ImageCache;
 import zone.pumpkinhill.discard.R;
+import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 
 public abstract class BaseActivity extends AppCompatActivity {
     protected final static int FILE_SELECT_CODE = 0;
 
-    protected final Context mContext = this;
+    protected final static List<Channel> NotifiedChannels = new ArrayList<>();
 
+    protected final Context mContext = this;
+    protected SharedPreferences mPref;
     protected boolean isAppInBackground;
     protected boolean showMenuProfile = false;
 
@@ -28,6 +36,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         isAppInBackground = false;
+        mPref = PreferenceManager.getDefaultSharedPreferences(this);
         if(ClientHelper.cache == null) {
             ClientHelper.cache = new ImageCache(mContext);
         }

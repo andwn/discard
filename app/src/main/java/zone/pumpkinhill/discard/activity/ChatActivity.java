@@ -124,6 +124,8 @@ public class ChatActivity extends BaseActivity {
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         if(mMessageView != null) switchChannel(mChannel);
+        // Re-enable notifications for this channel
+        NotifiedChannels.remove(mChannel);
         // Setup OnScrollListener to check for scrolling to the top
         mMessageView.setOnScrollListener(new AbsListView.OnScrollListener() {
             private int currentScrollState = SCROLL_STATE_IDLE,

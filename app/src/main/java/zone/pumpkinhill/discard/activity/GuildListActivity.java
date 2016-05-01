@@ -4,7 +4,11 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -12,6 +16,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import zone.pumpkinhill.discard.ClientHelper;
@@ -85,7 +90,12 @@ public class GuildListActivity extends BaseActivity {
     }
 
     private void notifyMessage(Channel channel) {
+        if(!mPref.getBoolean("notifications_new_message", true)) return;
+        // So we don't vibrate every 5 minutes for the same message
+        if(NotifiedChannels.contains(channel)) return;
+        NotifiedChannels.add(channel);
         Log.d(TAG, "Notifying for " + channel.getName());
+        // Figure out if this is from a guild or private channel
         Guild guild = null;
         String author = "Someone";
         if(channel.isPrivate()) author = ((PrivateChannel)channel).getRecipient().getName();
@@ -97,6 +107,17 @@ public class GuildListActivity extends BaseActivity {
                 .setContentText(author + (guild == null ?
                         " sent you a message." : " mentioned you in " +channel.getName() + "."))
                 .setAutoCancel(true);
+        // Setup the vibration, ringtone, and light
+        if(mPref.getBoolean("notifications_new_message_vibrate", true)) {
+            builder.setVibrate(new long[]{0, 150, 100, 150});
+        }
+        String ringtone = mPref.getString("notifications_new_message_ringtone", null);
+        if(ringtone != null) {
+            builder.setSound(Uri.parse(ringtone));
+        }
+        if(mPref.getBoolean("notifications_new_message_light", true)) {
+            builder.setLights(Color.argb(0xFF, 0x72, 0x89, 0xDA), 3000, 3000);
+        }
         Intent i = new Intent(this, ChatActivity.class)
                 .putExtra("guildId", guild == null ? "0" : guild.getID())
                 .putExtra("channelId", channel.getID());
