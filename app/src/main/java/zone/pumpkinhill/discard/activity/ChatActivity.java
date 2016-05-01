@@ -2,12 +2,15 @@ package zone.pumpkinhill.discard.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -31,6 +34,7 @@ import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
 import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
+import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 
 public class ChatActivity extends BaseActivity {
@@ -43,6 +47,7 @@ public class ChatActivity extends BaseActivity {
     private ListView mMessageView;
     private DrawerLayout mLayout;
     private NetworkTask mLoadTask = null;
+    private String mEditingMessage = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,7 +128,9 @@ public class ChatActivity extends BaseActivity {
         // Fill in message list
         if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
-        if(mMessageView != null) switchChannel(mChannel);
+        assert mMessageView != null;
+        registerForContextMenu(mMessageView);
+        switchChannel(mChannel);
         // Re-enable notifications for this channel
         NotifiedChannels.remove(mChannel);
         // Setup OnScrollListener to check for scrolling to the top
@@ -155,8 +162,15 @@ public class ChatActivity extends BaseActivity {
                 public void onClick(View v) {
                     EditText msg = (EditText) findViewById(R.id.editMessage);
                     if(msg == null || msg.getText().toString().isEmpty()) return;
-                    new NetworkTask(mContext).execute("send-message",
-                            mChannel.getID(), msg.getText().toString());
+                    if(mEditingMessage != null) {
+                        new NetworkTask(mContext).execute("edit-message", mChannel.getID(),
+                                mEditingMessage, msg.getText().toString());
+                        msg.setBackgroundColor(Color.WHITE);
+                        mEditingMessage = null;
+                    } else {
+                        new NetworkTask(mContext).execute("send-message", mChannel.getID(),
+                                msg.getText().toString());
+                    }
                     msg.setText("");
                 }
             });
@@ -211,6 +225,45 @@ public class ChatActivity extends BaseActivity {
             new NetworkTask(mContext).execute("send-file", mChannel.getID(), uri.toString());
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        if(v.getId() == R.id.messageListView) {
+            ListView lv = (ListView) v;
+            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+            Message msg = (Message) lv.getItemAtPosition(info.position);
+            menu.setHeaderTitle(msg.getAuthor().getName());
+            if(ClientHelper.client.getOurUser().getID().equals(msg.getAuthor().getID())) {
+                menu.add(0, 0, 0, "Edit Message");
+                menu.add(0, 1, 1, "Delete Message");
+            } else {
+                menu.add(1, 2, 2, "Private Chat");
+                menu.add(1, 3, 3, "View Profile");
+                //menu.add("Kick");
+                //menu.add("Ban");
+            }
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        Message msg = (Message) mMessageView.getAdapter().getItem(info.position);
+        switch(item.getItemId()) {
+            case 0: // Edit
+                EditText editView = (EditText) findViewById(R.id.editMessage);
+                assert editView != null;
+                editView.setText(msg.getContent());
+                editView.setBackgroundColor(Color.YELLOW);
+                mEditingMessage = msg.getID();
+                return true;
+            case 1: // Delete
+                new NetworkTask(mContext).execute("delete-message", mChannel.getID(), msg.getID());
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 
     @EventSubscriber

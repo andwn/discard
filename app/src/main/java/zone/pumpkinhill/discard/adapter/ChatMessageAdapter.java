@@ -1,5 +1,6 @@
 package zone.pumpkinhill.discard.adapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.Html;
 import android.text.Spanned;
@@ -141,10 +142,15 @@ public class ChatMessageAdapter extends DiscordAdapter {
 
     @EventSubscriber
     @SuppressWarnings("unused")
-    public void onMessageUpdate(MessageUpdateEvent event) {
+    public void onMessageUpdate(final MessageUpdateEvent event) {
         if(!mMessages.contains(event.getOldMessage())) return;
-        mMessages.remove(event.getOldMessage());
-        mMessages.add(event.getNewMessage());
-        notifyDataSetChanged();
+        ((Activity) mContext).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mMessages.remove(event.getOldMessage());
+                mMessages.add(event.getNewMessage());
+                notifyDataSetChanged();
+            }
+        });
     }
 }

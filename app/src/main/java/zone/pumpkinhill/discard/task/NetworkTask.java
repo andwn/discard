@@ -17,10 +17,12 @@ import java.util.Locale;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
+import zone.pumpkinhill.discard.activity.BaseActivity;
 import zone.pumpkinhill.discard.activity.ChatActivity;
 import zone.pumpkinhill.discard.activity.ProfileActivity;
 import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
+import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
 import zone.pumpkinhill.discord4droid.util.MessageList;
@@ -51,6 +53,8 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
                 case "load-messages": return doLoadMessages(params[1], params[2], params[3]);
                 case "ack-message" : ClientHelper.client.ackMessage(params[1], params[2]); break;
                 case "send-message": return doSendMessage(params[1], params[2]);
+                case "edit-message": return doEditMessage(params[1], params[2], params[3]);
+                case "delete-message": return doDeleteMessage(params[1], params[2]);
                 case "send-file": return doSendFile(params[1], params[2]);
                 case "create-invite":
                     ClientHelper.client.getChannelByID(params[1]).createInvite(0, 0, false, false);
@@ -98,6 +102,54 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
             mErrorMsg = "Unable to send message - traffic is being rate limited";
         } catch(DiscordException e) {
             mErrorMsg = "Error sending message: " + e;
+        }
+        return false;
+    }
+
+    protected boolean doEditMessage(String channelId, String messageId, String content) {
+        Channel channel = ClientHelper.client.getChannelByID(channelId);
+        if(channel == null) {
+            mErrorMsg = "Unable to find channel with ID " + channelId;
+            return false;
+        }
+        Message message = channel.getMessageByID(messageId);
+        if(message == null) {
+            mErrorMsg = "Unable to find message with ID " + messageId;
+            return false;
+        }
+        try {
+            message.edit(content);
+            return true;
+        } catch(MissingPermissionsException e) {
+            mErrorMsg = "Don't have permission to edit messages in this channel";
+        } catch(HTTP429Exception e) {
+            mErrorMsg = "Unable to edit message - traffic is being rate limited";
+        } catch(DiscordException e) {
+            mErrorMsg = "Error editing message: " + e;
+        }
+        return false;
+    }
+
+    protected boolean doDeleteMessage(String channelId, String messageId) {
+        Channel channel = ClientHelper.client.getChannelByID(channelId);
+        if(channel == null) {
+            mErrorMsg = "Unable to find channel with ID " + channelId;
+            return false;
+        }
+        Message message = channel.getMessageByID(messageId);
+        if(message == null) {
+            mErrorMsg = "Unable to find message with ID " + messageId;
+            return false;
+        }
+        try {
+            message.delete();
+            return true;
+        } catch(MissingPermissionsException e) {
+            mErrorMsg = "Don't have permission to delete messages in this channel";
+        } catch(HTTP429Exception e) {
+            mErrorMsg = "Unable to delete message - traffic is being rate limited";
+        } catch(DiscordException e) {
+            mErrorMsg = "Error deleting message: " + e;
         }
         return false;
     }
@@ -161,7 +213,7 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         m.addAll(mTempMsgList.reverse());
         ((ChatMessageAdapter) ((ListView) ((ChatActivity) mContext)
                 .findViewById(R.id.messageListView)).getAdapter()).notifyDataSetChanged();
-        if(mParams[2] == null && mParams[3] == null) {
+        if(mParams[3] == null) {
             new NetworkTask(mContext).execute("ack-message", c.getID(), m.getLatest().getID());
         }
         return true;
