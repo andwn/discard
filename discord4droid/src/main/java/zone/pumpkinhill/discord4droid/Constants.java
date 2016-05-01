@@ -5,7 +5,7 @@ public interface Constants {
     String APP_VERSION = "0.1.2";
 
     String LIB_NAME = "Discord4Droid";
-    String LIB_VERSION = "2.4.4";
+    String LIB_VERSION = "2.4.7";
 
     String USER_AGENT = APP_NAME + " v" + APP_VERSION;
 

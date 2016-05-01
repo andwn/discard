@@ -1,6 +1,5 @@
 package zone.pumpkinhill.discord4droid.api;
 
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
@@ -18,7 +17,6 @@ import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Invite;
-import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 import zone.pumpkinhill.discord4droid.handle.obj.Region;
@@ -38,7 +36,6 @@ import zone.pumpkinhill.discord4droid.json.responses.PrivateChannelResponse;
 import zone.pumpkinhill.discord4droid.json.responses.RegionResponse;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
-import zone.pumpkinhill.discord4droid.util.ImageHelper;
 import zone.pumpkinhill.http.entity.StringEntity;
 import zone.pumpkinhill.http.message.BasicNameValuePair;
 

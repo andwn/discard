@@ -1,0 +1,52 @@
+apply plugin: 'com.android.library'
+import org.apache.tools.ant.taskdefs.condition.Os
+
+mkdir('build')
+def f = new File('libopus/build/opus-1.1.2.tar.gz')
+if (!f.exists()) {
+    new URL('http://downloads.xiph.org/releases/opus/opus-1.1.2.tar.gz').withInputStream{
+        i -> f.withOutputStream{ it << i }
+    }
+}
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 23
+        versionCode 10102
+        versionName "1.1.2"
+        ndk { moduleName = "opus" }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    sourceSets.main {
+        jni.srcDirs = []
+        jniLibs.srcDir 'src/main/libs'
+    }
+    task ndkBuild(type: Exec) {
+        ant.gunzip(src: 'build/opus-1.1.2.tar.gz', dest: 'build/ungziped.tar')
+        copy { from tarTree('build/ungziped.tar')
+            into 'build/' }
+        copy { from 'src/main/jni/opus/Android.mk'
+            into 'build/opus-1.1.2/' }
+        def ndkCmd = "${android.ndkDirectory}/ndk-build"
+        if(Os.isFamily(Os.FAMILY_WINDOWS)) { ndkCmd += '.cmd' }
+        commandLine ndkCmd, '-C', file('src/main/jni').absolutePath
+    }
+    task ndkClean(type: Exec) {
+        def ndkCmd = "${android.ndkDirectory}/ndk-build"
+        if(Os.isFamily(Os.FAMILY_WINDOWS)) { ndkCmd += '.cmd' }
+        commandLine ndkCmd, '-C', file('src/main/jni').absolutePath, 'clean'
+    }
+    clean.dependsOn 'ndkClean'
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+}
