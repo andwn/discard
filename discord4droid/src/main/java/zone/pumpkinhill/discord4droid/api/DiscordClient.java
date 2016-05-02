@@ -278,6 +278,7 @@ public final class DiscordClient {
     public void suspend() {
         if(suspended) return;
         suspended = true;
+        isReady = false;
         Log.i(TAG, "Suspending websocket connection.");
         if (ws != null) {
             ws.disconnect(DiscordDisconnectedEvent.Reason.SUSPENDED);
@@ -534,6 +535,10 @@ public final class DiscordClient {
         return REGIONS;
     }
 
+    public List<Region> getLoadedRegions() {
+        return REGIONS;
+    }
+
     /**
      * Gets the corresponding region for a given id.
      *
@@ -573,13 +578,18 @@ public final class DiscordClient {
                             new CreateGuildRequest(name, region, icon))),
                     new BasicNameValuePair("authorization", this.token),
                     new BasicNameValuePair("content-type", "application/json")), GuildResponse.class);
-            Guild guild = DiscordUtils.getGuildFromJSON(this, guildResponse);
-            guildList.add(guild);
-            return guild;
+            return DiscordUtils.getGuildFromJSON(this, guildResponse);
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "Error creating guild: " + e);
         }
         return null;
+    }
+
+    public void refreshGuild(String id) throws HTTP429Exception, DiscordException {
+        GuildResponse guildResponse = DiscordUtils.GSON.fromJson(
+                Requests.GET.makeRequest(url + Endpoints.API + "/guilds/" + id,
+                        new BasicNameValuePair("authorization", this.token)), GuildResponse.class);
+        DiscordUtils.getGuildFromJSON(this, guildResponse);
     }
 
     public void ackMessage(String channelId, String messageId) throws HTTP429Exception, DiscordException {

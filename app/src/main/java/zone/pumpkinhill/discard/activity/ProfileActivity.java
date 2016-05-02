@@ -1,10 +1,7 @@
 package zone.pumpkinhill.discard.activity;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -12,19 +9,16 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import java.io.IOException;
-
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.task.ImageDownloaderTask;
 import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
-import zone.pumpkinhill.discord4droid.util.ImageHelper;
+import zone.pumpkinhill.discard.ImageHelper;
 
-public class ProfileActivity extends BaseActivity {
+public class ProfileActivity extends AvatarPickerActivity {
     private NetworkTask mSaveTask = null;
     private User mUser;
-    private Bitmap mNewAvatar = null;
     private View mProgressView, mFormView;
 
     @Override
@@ -33,6 +27,7 @@ public class ProfileActivity extends BaseActivity {
         setContentView(R.layout.activity_profile);
         mProgressView = findViewById(R.id.save_progress);
         mFormView = findViewById(R.id.optionContainer);
+        mAvatarPicker = (ImageView) findViewById(R.id.profAvatar);
         String userId = getIntent().getExtras().getString("userId");
         if(userId == null || userId.isEmpty()) {
             Toast.makeText(this, "No userId for ProfileActivity", Toast.LENGTH_LONG).show();
@@ -48,13 +43,11 @@ public class ProfileActivity extends BaseActivity {
         // Name
         setTitle(mUser.getName() + " #" + mUser.getDiscriminator());
         // Avatar
-        ImageView avatarView = (ImageView) findViewById(R.id.profAvatar);
-        assert avatarView != null;
         Bitmap avatar = ClientHelper.cache.get(mUser.getID());
         if(avatar == null) {
-            new ImageDownloaderTask(avatarView).execute(mUser.getID(), mUser.getAvatarURL());
+            new ImageDownloaderTask(mAvatarPicker).execute(mUser.getID(), mUser.getAvatarURL());
         } else {
-            avatarView.setImageBitmap(avatar);
+            mAvatarPicker.setImageBitmap(avatar);
         }
         if(ClientHelper.client.getOurUser().getID().equals(userId)) {
             // Looking at our own profile, allow editing
@@ -72,15 +65,7 @@ public class ProfileActivity extends BaseActivity {
             nameBox.setHint(mUser.getName());
             emailBox.setHint(ClientHelper.client.getEmail());
             // Set onClick for avatar (pick new avatar image)
-            avatarView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent i = new Intent(Intent.ACTION_GET_CONTENT, null);
-                    i.setType("image/*");
-                    i.addCategory(Intent.CATEGORY_OPENABLE);
-                    startActivityForResult(i, FILE_SELECT_CODE);
-                }
-            });
+            mAvatarPicker.setOnClickListener(new ChangeAvatarOnClickListener());
             // Set onClick for save button
             Button saveButton = (Button) findViewById(R.id.saveButton);
             assert saveButton != null;
@@ -109,22 +94,6 @@ public class ProfileActivity extends BaseActivity {
             getLayoutInflater().inflate(R.layout.profile_others,
                     (ViewGroup) findViewById(R.id.optionContainer));
         }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FILE_SELECT_CODE && resultCode == RESULT_OK) {
-            Uri uri = data.getData();
-            try {
-                mNewAvatar = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
-                ImageView avatarView = (ImageView) findViewById(R.id.profAvatar);
-                assert avatarView != null;
-                avatarView.setImageBitmap(mNewAvatar);
-            } catch(IOException e) {
-                Toast.makeText(mContext, "Error loading image: " + e, Toast.LENGTH_LONG).show();
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private User findUser(String id) {

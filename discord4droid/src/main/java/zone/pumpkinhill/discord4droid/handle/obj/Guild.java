@@ -1,6 +1,5 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
@@ -27,7 +26,6 @@ import zone.pumpkinhill.discord4droid.json.responses.PruneResponse;
 import zone.pumpkinhill.discord4droid.json.responses.UserResponse;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
-import zone.pumpkinhill.discord4droid.util.ImageHelper;
 import zone.pumpkinhill.discord4droid.util.MissingPermissionsException;
 import zone.pumpkinhill.http.entity.StringEntity;
 import zone.pumpkinhill.http.message.BasicNameValuePair;
@@ -488,15 +486,16 @@ public class Guild {
         }
     }
 
-    private void edit(String name, String regionID, Bitmap icon, String afkChannelID, Integer afkTimeout) throws MissingPermissionsException, HTTP429Exception, DiscordException {
+    public void edit(String name, String regionID, String icon, String afkChannelID, Integer afkTimeout) throws MissingPermissionsException, HTTP429Exception, DiscordException {
         DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_SERVER));
 
         try {
             GuildResponse response = DiscordUtils.GSON.fromJson(
                     Requests.PATCH.makeRequest(client.getURL() + Endpoints.GUILDS + id,
                     new StringEntity(DiscordUtils.GSON.toJson(new EditGuildRequest(
-                            name == null ? this.name : name, regionID == null ? this.regionID : regionID,
-                            icon == null ? this.icon : ImageHelper.getBase64JPEG(icon),
+                            name == null ? this.name : name,
+                            regionID == null ? this.regionID : regionID,
+                            icon == null ? this.icon : icon,
                             afkChannelID == null ? this.afkChannel : afkChannelID,
                             afkTimeout == null ? this.afkTimeout : afkTimeout))),
                     new BasicNameValuePair("authorization", client.getToken()),
@@ -504,67 +503,6 @@ public class Guild {
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "Error editing guild: " + e);
         }
-    }
-
-    /**
-     * Changes the name of the guild.
-     *
-     * @param name The new name of the guild.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeName(String name) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(name, null, null, null, null);
-    }
-
-    /**
-     * Changes the region of the guild.
-     *
-     * @param region The new region of the guild.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeRegion(Region region) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, region.getID(), null, null, null);
-    }
-
-    /**
-     * Changes the name of the guild.
-     *
-     * @param icon The new icon of the guild (or empty to remove it).
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeIcon(Bitmap icon) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, null, icon, null, null);
-    }
-
-    /**
-     * Changes the AFK voice channel of the guild.
-     *
-     * @param channel The new AFK voice channel of the guild (or empty to remove it).
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeAFKChannel(VoiceChannel channel) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        String id = channel == null ? null : channel.getID();
-        edit(null, null, null, id, null);
-    }
-
-    /**
-     * Changes the AFK timeout for the guild.
-     *
-     * @param timeout The new AFK timeout for the guild.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeAFKTimeout(int timeout) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, null, null, null, timeout);
     }
 
     /**

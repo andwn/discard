@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 import android.widget.ListView;
@@ -13,15 +14,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
-import zone.pumpkinhill.discard.activity.BaseActivity;
 import zone.pumpkinhill.discard.activity.ChatActivity;
+import zone.pumpkinhill.discard.activity.EditGuildActivity;
 import zone.pumpkinhill.discard.activity.ProfileActivity;
 import zone.pumpkinhill.discard.adapter.ChatMessageAdapter;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
+import zone.pumpkinhill.discord4droid.handle.obj.Guild;
+import zone.pumpkinhill.discord4droid.handle.obj.Invite;
+import zone.pumpkinhill.discord4droid.handle.obj.InviteResponse;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
 import zone.pumpkinhill.discord4droid.util.HTTP429Exception;
@@ -35,11 +40,16 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
     private final Context mContext;
     private String mErrorMsg;
     private String[] mParams;
+    private Handler.Callback mCallback = null;
 
     private MessageList mTempMsgList = null;
 
     public NetworkTask(Context context) {
         mContext = context;
+    }
+
+    public void callWhenFinished(Handler.Callback callback) {
+        mCallback = callback;
     }
 
     protected Boolean doInBackground(String... params) {
@@ -56,15 +66,15 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
                 case "edit-message": return doEditMessage(params[1], params[2], params[3]);
                 case "delete-message": return doDeleteMessage(params[1], params[2]);
                 case "send-file": return doSendFile(params[1], params[2]);
-                case "create-invite":
-                    ClientHelper.client.getChannelByID(params[1]).createInvite(0, 0, false, false);
-                    break;
-                case "create-guild":
-                    ClientHelper.client.createGuild(params[1], params[2], params[3]);
-                    break;
+                case "get-invite": return doGetInvite(params[1]);
+                case "join-guild": return doJoinGuild(params[1]);
+                case "create-guild": return doCreateGuild(params[1], params[2], params[3]);
+                case "delete-guild": ClientHelper.client.getGuildByID(params[1]).deleteGuild(); break;
+                case "leave-guild": ClientHelper.client.getGuildByID(params[1]).leaveGuild(); break;
                 case "change-profile":
                     ClientHelper.client.changeAccountInfo(params[1], params[2], params[3], params[4]);
                     break;
+                case "get-regions": ClientHelper.client.getRegions(); break;
                 default: mErrorMsg = "Unknown command: " + params[0]; return false;
             }
             return true;
@@ -193,16 +203,74 @@ public class NetworkTask extends AsyncTask<String, Void, Boolean> {
         return false;
     }
 
+    protected boolean doGetInvite(String guildId) {
+        try {
+            String ourInviteCode;
+            Guild guild = ClientHelper.client.getGuildByID(guildId);
+            List<Invite> invites = guild.getInvites();
+            if(invites.size() > 0) {
+                ourInviteCode = invites.get(0).getInviteCode();
+            } else {
+                ourInviteCode = guild.getChannels().get(0)
+                        .createInvite(0, 0, false, false).getInviteCode();
+            }
+            ((ChatActivity) mContext).applyInviteCodeToTextBox(ourInviteCode);
+            return true;
+        } catch(HTTP429Exception | DiscordException | MissingPermissionsException e) {
+            mErrorMsg = "Failed to join guild: " + e;
+            return false;
+        }
+
+    }
+
+    protected boolean doJoinGuild(String inviteCode) {
+        try {
+            Invite invite = ClientHelper.client.getInviteForCode(inviteCode);
+            if(invite == null) {
+                mErrorMsg = "Unable to get invite from \"" + inviteCode + "\"";
+                return false;
+            }
+            InviteResponse response = invite.accept();
+            if(response.getGuildID() == null) {
+                mErrorMsg = "Not a guild invite!";
+                return false;
+            }
+            return true;
+        } catch(HTTP429Exception | DiscordException e) {
+            mErrorMsg = "Failed to join guild: " + e;
+            return false;
+        }
+    }
+
+    protected boolean doCreateGuild(String name, String region, String icon) {
+        try {
+            Guild guild = ClientHelper.client.createGuild(name, region, icon);
+            if(guild == null) {
+                mErrorMsg = "Failed to create guild";
+                return false;
+            }
+            // For some reason, the response discord gives us has no channels, so we manually
+            // ask for the full guild object here
+            ClientHelper.client.refreshGuild(guild.getID());
+            return true;
+        } catch(HTTP429Exception | DiscordException e) {
+            mErrorMsg = "Failed to create guild: " + e;
+            return false;
+        }
+    }
+
     protected void onPostExecute(Boolean result) {
         try {
             switch (mParams[0]) {
                 case "load-messages": postLoadMessages(result); break;
                 case "change-profile": ((ProfileActivity) mContext).taskFinished(result); break;
+                case "create-guild": ((EditGuildActivity) mContext).taskFinished(result); break;
             }
         } catch(Exception e) {
             mErrorMsg += " :: " + e;
         }
         if(!result) Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_LONG).show();
+        if(mCallback != null) mCallback.handleMessage(new android.os.Message());
     }
 
     private boolean postLoadMessages(Boolean result) {

@@ -2,15 +2,49 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
+    <!-- Guild Control -->
+    <item android:id="@+id/menu_get_invite"
+        android:title="Get Invite"
+        android:icon="@drawable/ic_menu_manage"
+        android:visible="false"
+        app:showAsAction="never"
+        app:actionViewClass="android.widget.ImageButton" />
+    <item android:id="@+id/menu_edit_guild"
+        android:title="Edit Guild"
+        android:icon="@drawable/ic_menu_manage"
+        android:visible="false"
+        app:showAsAction="never"
+        app:actionViewClass="android.widget.ImageButton" />
+    <item android:id="@+id/menu_delete_guild"
+        android:title="Delete Guild"
+        android:icon="@drawable/ic_menu_manage"
+        android:visible="false"
+        app:showAsAction="never"
+        app:actionViewClass="android.widget.ImageButton" />
+    <item android:id="@+id/menu_leave_guild"
+        android:title="Leave Guild"
+        android:icon="@drawable/ic_menu_manage"
+        android:visible="false"
+        app:showAsAction="never"
+        app:actionViewClass="android.widget.ImageButton" />
+
+    <!-- Server side user settings -->
     <item android:id="@+id/menu_profile"
         android:title="Edit Profile"
         android:icon="@drawable/ic_menu_manage"
         android:visible="false"
         app:showAsAction="never"
         app:actionViewClass="android.widget.ImageButton" />
+    <item android:id="@+id/menu_config"
+        android:title="Discord Settings"
+        android:icon="@drawable/ic_menu_manage"
+        android:visible="false"
+        app:showAsAction="never"
+        app:actionViewClass="android.widget.ImageButton" />
 
+    <!-- App Settings -->
     <item android:id="@+id/menu_preferences"
-        android:title="Preferences"
+        android:title="App Preferences"
         android:icon="@drawable/ic_menu_manage"
         app:showAsAction="never"
         app:actionViewClass="android.widget.ImageButton" />

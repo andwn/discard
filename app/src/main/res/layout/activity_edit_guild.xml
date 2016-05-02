@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="zone.pumpkinhill.discard.activity.EditGuildActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Guild Icon - 128x128 minimum"
+        android:id="@+id/editGuildLabel"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/guildIcon"
+        android:src="@drawable/ic_menu_camera"
+        android:minHeight="192dp"
+        android:minWidth="192dp"
+        android:layout_below="@+id/editGuildLabel"
+        android:layout_centerHorizontal="true" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/guildName"
+        android:layout_centerHorizontal="true"
+        android:hint="Guild Name"
+        android:layout_below="@+id/guildIcon" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Region"
+        android:id="@+id/guildRegionLabel"
+        android:layout_below="@+id/guildName"
+        android:layout_centerHorizontal="true" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/guildRegion"
+        android:layout_below="@+id/guildRegionLabel"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Changes"
+        android:id="@+id/saveButton"
+        android:layout_below="@+id/guildRegion"
+        android:layout_centerHorizontal="true" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/guildIcon"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/ownerLayout"></FrameLayout>
+
+</RelativeLayout>

@@ -1,9 +1,5 @@
 package zone.pumpkinhill.discord4droid.json.requests;
 
-import android.graphics.Bitmap;
-
-import zone.pumpkinhill.discord4droid.util.ImageHelper;
-
 /**
  * This is sent to create a new guild.
  */

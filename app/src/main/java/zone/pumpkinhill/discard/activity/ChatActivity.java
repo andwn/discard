@@ -1,15 +1,21 @@
 package zone.pumpkinhill.discard.activity;
 
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
@@ -19,9 +25,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import zone.pumpkinhill.discard.ClientHelper;
 import zone.pumpkinhill.discard.R;
@@ -48,6 +56,7 @@ public class ChatActivity extends BaseActivity {
     private DrawerLayout mLayout;
     private NetworkTask mLoadTask = null;
     private String mEditingMessage = null;
+    private EditText mInviteTextBox = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +99,13 @@ public class ChatActivity extends BaseActivity {
             textChannels.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
             // Disable the user list drawer
             mLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
+            // Clear the "Text Channels" and "Voice Channels" text
+            TextView tcLabel = (TextView) findViewById(R.id.textChannelLabel);
+            TextView vcLabel = (TextView) findViewById(R.id.voiceChannelLabel);
+            assert tcLabel != null;
+            assert vcLabel != null;
+            tcLabel.setText("");
+            vcLabel.setText("");
         } else {
             // Guild
             mGuild = ClientHelper.client.getGuildByID(guildId);
@@ -99,6 +115,10 @@ public class ChatActivity extends BaseActivity {
                 return;
             }
             mChannelList = mGuild.getChannels();
+            if(mChannelList.size() == 0) { // No channels
+                finish();
+                return;
+            }
             if(channelId != null && !channelId.isEmpty()) {
                 mChannel = mGuild.getChannelByID(channelId);
             }
@@ -206,7 +226,9 @@ public class ChatActivity extends BaseActivity {
     public void finish() {
         super.finish();
         ClientHelper.unsubscribe(this);
-        ClientHelper.unsubscribe(mMessageView.getAdapter());
+        if(mMessageView != null && mMessageView.getAdapter() != null) {
+            ClientHelper.unsubscribe(mMessageView.getAdapter());
+        }
         ClientHelper.setActiveChannel(null);
     }
 
@@ -216,6 +238,129 @@ public class ChatActivity extends BaseActivity {
         Intent intent = new Intent(this,GuildListActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    private void showGetInviteDialog() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(mContext);
+        alert.setTitle("Invite");
+        alert.setMessage("Send this link to someone to invite them to " + mGuild.getName());
+        mInviteTextBox = new EditText(mContext);
+        mInviteTextBox.setText("(Getting Invite)");
+        alert.setView(mInviteTextBox);
+        // Start a background task to get an invite
+        NetworkTask task = new NetworkTask(mContext);
+        task.execute("get-invite", mGuild.getID());
+        // Copy to clipboard or close
+        alert.setPositiveButton("Copy", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("invite", mInviteTextBox.getText().toString());
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(mContext, "Copied to clipboard", Toast.LENGTH_LONG).show();
+            }
+        });
+        alert.setNegativeButton("Close", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                mInviteTextBox = null;
+            }
+        });
+        alert.show();
+    }
+
+    public void applyInviteCodeToTextBox(final String code) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mInviteTextBox.setText(code);
+            }
+        });
+    }
+
+    private void showGuildConfirmDialog(final boolean delete) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(mContext);
+        alert.setTitle(delete ? "Delete Guild" : "Leave Guild");
+        alert.setMessage("Are you really sure you want to " + (delete ? "delete " : "leave ") +
+                mGuild.getName() + "? This action cannot be undone.");
+        alert.setPositiveButton(delete ? "Delete" : "Leave", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                NetworkTask task = new NetworkTask(mContext);
+                task.execute(delete ? "delete-guild" : "leave-guild", mGuild.getID());
+                // Wait for it to finish
+                // FIXME: This blocks the UI thread, use callback instead
+                boolean result;
+                try {
+                    result = task.get();
+                } catch(ExecutionException | InterruptedException e) {
+                    return;
+                }
+                // If it succeeded close everything
+                if(!result) return;
+                dialog.dismiss();
+                finish();
+            }
+        });
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        alert.show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if(!super.onCreateOptionsMenu(menu)) return false;
+        if(mGuild == null) return true; // Don't add these for private chat
+        // Anyone can invite TODO: By default, but it can be restricted via roles
+        MenuItem getInvite = menu.findItem(R.id.menu_get_invite);
+        getInvite.setVisible(true);
+        getInvite.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                showGetInviteDialog();
+                return true;
+            }
+        });
+        if(mGuild.getOwnerID().equals(ClientHelper.client.getOurUser().getID())) {
+            // Guild owner can edit and delete
+            MenuItem editGuild = menu.findItem(R.id.menu_edit_guild);
+            editGuild.setVisible(true);
+            editGuild.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    Intent i = new Intent(mContext, EditGuildActivity.class);
+                    i.putExtra("guildId", mGuild.getID());
+                    startActivity(i);
+                    return true;
+                }
+            });
+            MenuItem deleteGuild = menu.findItem(R.id.menu_delete_guild);
+            deleteGuild.setVisible(true);
+            deleteGuild.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    showGuildConfirmDialog(true);
+                    return true;
+                }
+            });
+        } else {
+            // Non-owner can leave
+            MenuItem leaveGuild = menu.findItem(R.id.menu_leave_guild);
+            leaveGuild.setVisible(true);
+            leaveGuild.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    showGuildConfirmDialog(false);
+                    return true;
+                }
+            });
+        }
+        return true;
     }
 
     @Override
@@ -238,8 +383,8 @@ public class ChatActivity extends BaseActivity {
                 menu.add(0, 0, 0, "Edit Message");
                 menu.add(0, 1, 1, "Delete Message");
             } else {
-                menu.add(1, 2, 2, "Private Chat");
-                menu.add(1, 3, 3, "View Profile");
+                menu.add(0, 2, 2, "Private Chat");
+                menu.add(0, 3, 3, "View Profile");
                 //menu.add("Kick");
                 //menu.add("Ban");
             }

@@ -418,8 +418,6 @@ public class DiscordWS extends WebSocketAdapter {
 
         startKeepalive();
 
-        client.isReady = true;
-
         // I hope you like loops.
         //client.guildList.clear();
         for(GuildResponse guildResponse : event.guilds) {
@@ -446,6 +444,9 @@ public class DiscordWS extends WebSocketAdapter {
                 channel.setMentionCount(readState.mention_count);
             }
         }
+
+        client.isReady = true;
+
         Log.i(TAG, "Logged in as "+client.ourUser.getName()+" (ID "+client.ourUser.getID()+").");
 
         client.dispatcher.dispatch(new ReadyEvent());

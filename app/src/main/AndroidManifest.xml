@@ -39,7 +39,8 @@
         <activity
             android:name=".activity.SettingsActivity"
             android:label="@string/title_activity_preferences" />
-        <activity android:name=".activity.ProfileActivity"></activity>
+        <activity android:name=".activity.ProfileActivity" />
+        <activity android:name=".activity.EditGuildActivity"></activity>
     </application>
 
 </manifest>

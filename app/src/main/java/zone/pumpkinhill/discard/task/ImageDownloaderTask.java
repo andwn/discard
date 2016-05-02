@@ -18,6 +18,7 @@ import java.net.URL;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import zone.pumpkinhill.discard.ClientHelper;
+import zone.pumpkinhill.discard.ImageHelper;
 import zone.pumpkinhill.http.HttpStatus;
 
 /**
@@ -116,7 +117,7 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
                         (float) fullSize.getHeight();
                 int newHeight = 700;
                 int newWidth = Math.round(newHeight * aspectRatio);
-                return getResizedBitmap(fullSize, newWidth, newHeight);
+                return ImageHelper.getResizedBitmap(fullSize, newWidth, newHeight, false);
             } else {
                 return fullSize;
             }
@@ -138,23 +139,6 @@ public class ImageDownloaderTask extends AsyncTask<String, Void, Bitmap> {
             Log.w(TAG, "Wait thread interrupted.");
             return null;
         }
-    }
-
-    private Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // CREATE A MATRIX FOR THE MANIPULATION
-        Matrix matrix = new Matrix();
-        // RESIZE THE BIT MAP
-        matrix.postScale(scaleWidth, scaleHeight);
-
-        // "RECREATE" THE NEW BITMAP
-        Bitmap resizedBitmap = Bitmap.createBitmap(
-                bm, 0, 0, width, height, matrix, false);
-        bm.recycle();
-        return resizedBitmap;
     }
 
     public String getID() {

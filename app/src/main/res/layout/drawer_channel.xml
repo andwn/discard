@@ -25,7 +25,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Text Channels" />
+            android:text="Text Channels"
+            android:id="@+id/textChannelLabel" />
 
         <ListView
             android:layout_width="wrap_content"
@@ -37,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Voice Channels"
-            android:id="@+id/textView" />
+            android:id="@+id/voiceChannelLabel" />
 
         <ListView
             android:layout_width="wrap_content"
