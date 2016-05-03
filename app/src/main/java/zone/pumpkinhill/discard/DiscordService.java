@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -16,8 +17,9 @@ import zone.pumpkinhill.discord4droid.util.DiscordException;
 
 public class DiscordService extends Service {
     private final static String TAG = DiscordService.class.getCanonicalName();
-    private Timer mNotifyTimer;
     private volatile static boolean mScreenOn;
+    private Timer mNotifyTimer;
+    private Context mContext = this;
 
     public DiscordService() {}
 
@@ -36,6 +38,7 @@ public class DiscordService extends Service {
             @Override
             public void run() {
                 if(mScreenOn) return;
+                if(!ClientHelper.isNetworkConnected(mContext)) return;
                 if(!ClientHelper.isReady()) return;
                 if(!ClientHelper.client.isSuspended()) return;
                 try {
@@ -61,10 +64,7 @@ public class DiscordService extends Service {
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
+    public IBinder onBind(Intent intent) { return new Binder(); }
 
     private class ScreenReceiver extends BroadcastReceiver {
         private boolean screenOn;

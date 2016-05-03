@@ -1,9 +1,10 @@
 package zone.pumpkinhill.discard;
 
-import android.graphics.Bitmap;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.EventDispatcher;
@@ -74,5 +75,14 @@ public class ClientHelper {
     }
     public static void setActiveChannel(Channel channel) {
         mActiveChannel = channel;
+    }
+
+    // Check internet connection
+    // https://stackoverflow.com/a/21697799
+    public static boolean isNetworkConnected(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
     }
 }
