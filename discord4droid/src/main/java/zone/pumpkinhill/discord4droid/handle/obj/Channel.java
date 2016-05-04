@@ -3,31 +3,26 @@ package zone.pumpkinhill.discord4droid.handle.obj;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.DiscordUtils;
 import zone.pumpkinhill.discord4droid.api.Endpoints;
 import zone.pumpkinhill.discord4droid.api.Requests;
+import zone.pumpkinhill.discord4droid.handle.events.ChannelUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
 import zone.pumpkinhill.discord4droid.json.generic.PermissionOverwrite;
 import zone.pumpkinhill.discord4droid.json.requests.ChannelEditRequest;
 import zone.pumpkinhill.discord4droid.json.requests.InviteRequest;
 import zone.pumpkinhill.discord4droid.json.requests.MessageRequest;
+import zone.pumpkinhill.discord4droid.json.responses.ChannelResponse;
 import zone.pumpkinhill.discord4droid.json.responses.ExtendedInviteResponse;
 import zone.pumpkinhill.discord4droid.json.responses.MessageResponse;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
@@ -43,79 +38,18 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
 /**
  * Defines a text channel in a guild/server.
  */
-public class Channel {
-    private final static String TAG = Channel.class.getCanonicalName();
+public class Channel extends DiscordObject {
+    private final static String TAG = Channel.class.getSimpleName();
 
-    /**
-     * User-friendly channel name (e.g. "general")
-     */
     protected String name;
-
-    /**
-     * Channel ID.
-     */
-    protected final String id;
-
-    /**
-     * Messages that have been sent into this channel
-     */
     protected final MessageList messages;
-
-    /**
-     * Indicates whether or not this channel is a PM channel.
-     */
     protected boolean isPrivate;
-
-    /**
-     * The guild this channel belongs to.
-     */
     protected final Guild parent;
-
-    /**
-     * The channel's topic message.
-     */
     protected String topic;
-
-    /**
-     * The last read message.
-     */
     protected String lastReadMessageID = null;
-
-    /**
-     * Whether the bot should send out a typing status
-     */
-    protected AtomicBoolean isTyping = new AtomicBoolean(false);
-
-    /**
-     * Manages all TimerTasks which send typing statuses.
-     */
-    protected static Timer typingTimer = new Timer("Typing Status Timer", true);
-
-    /**
-     * 5 seconds, the time it takes for one typing status to "wear off".
-     */
-    protected static final long TIME_FOR_TYPE_STATUS = 5000;
-
-    /**
-     * The position of this channel in the channel list.
-     */
     protected int position;
-
-    /**
-     * The permission overrides for users (key = user id).
-     */
     protected Map<String, PermissionOverride> userOverrides;
-
-    /**
-     * The permission overrides for roles (key = user id).
-     */
     protected Map<String, PermissionOverride> roleOverrides;
-
-    /**
-     * The client that created this object.
-     */
-    protected final DiscordClient client;
-
     protected int mentionCount;
 
     public Channel(DiscordClient client, String name, String id, Guild parent, String topic, int position) {
@@ -126,9 +60,8 @@ public class Channel {
     public Channel(DiscordClient client, String name, String id, Guild parent, String topic,
                    int position, Map<String, PermissionOverride> roleOverrides,
                    Map<String, PermissionOverride> userOverrides) {
-        this.client = client;
+        super(client, id);
         this.name = name;
-        this.id = id;
         this.parent = parent;
         this.isPrivate = false;
         this.topic = topic;
@@ -157,15 +90,6 @@ public class Channel {
      */
     public void setName(String name) {
         this.name = name;
-    }
-
-    /**
-     * Gets the id of this channel.
-     *
-     * @return The channel id.
-     */
-    public String getID() {
-        return id;
     }
 
     /**
@@ -312,45 +236,6 @@ public class Channel {
     }
 
     /**
-     * Sends a file to the channel.
-     *
-     * @param file The file to send.
-     * @param content The message to be sent with the file.
-     * @return The message sent.
-     *
-     * @throws IOException
-     * @throws MissingPermissionsException
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     */
-    public Message sendFile(File file, @Nullable String content)
-            throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
-        InputStream stream = new FileInputStream(file);
-        ContentType type = ContentType.create(
-                URLConnection.getFileNameMap().getContentTypeFor(file.getAbsolutePath()));
-        String name = file.getName();
-        Message msg = sendFile(stream, type, name, content);
-        stream.close();
-        return msg;
-    }
-
-    /**
-     * Sends a file to the channel with a message attached.
-     *
-     * @param file The file to send.
-     * @return The message sent.
-     *
-     * @throws IOException
-     * @throws MissingPermissionsException
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     */
-    public Message sendFile(File file)
-            throws IOException, MissingPermissionsException, HTTP429Exception, DiscordException {
-        return sendFile(file, null);
-    }
-
-    /**
      * Generates an invite for this channel.
      *
      * @param maxAge How long the invite should be valid, setting it to 0 makes it last forever.
@@ -384,35 +269,6 @@ public class Channel {
     }
 
     /**
-     * Toggles whether the bot is "typing".
-     */
-    public synchronized void toggleTypingStatus() {
-        isTyping.set(!isTyping.get());
-        typingTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (!isTyping.get())
-                    this.cancel();
-                try {
-                    Requests.POST.makeRequest(client.getURL() + Endpoints.CHANNELS+getID()+"/typing",
-                            new BasicNameValuePair("authorization", client.getToken()));
-                } catch (HTTP429Exception | DiscordException e) {
-                    Log.e(TAG, "Error setting typing status: " + e);
-                }
-            }
-        }, 0, TIME_FOR_TYPE_STATUS);
-    }
-
-    /**
-     * Gets whether the bot is "typing".
-     *
-     * @return True if the bot is typing, false if otherwise.
-     */
-    public synchronized boolean getTypingStatus() {
-        return isTyping.get();
-    }
-
-    /**
      * Gets the last read message id.
      *
      * @return The message id.
@@ -430,7 +286,8 @@ public class Channel {
         return getMessageByID(lastReadMessageID);
     }
 
-    private void edit(String name, Integer position, String topic) throws DiscordException, MissingPermissionsException, HTTP429Exception {
+    public void edit(String name, Integer position, String topic)
+            throws DiscordException, MissingPermissionsException, HTTP429Exception {
         DiscordUtils.checkPermissions(client, this,
                 EnumSet.of(Permissions.MANAGE_CHANNEL, Permissions.MANAGE_CHANNELS));
         String newName = name == null ? this.name : name;
@@ -440,49 +297,23 @@ public class Channel {
             throw new DiscordException("Channel name can only be between 2 and 100 characters!");
         }
         try {
-            Requests.PATCH.makeRequest(client.getURL() + Endpoints.CHANNELS+id,
-                    new StringEntity(DiscordUtils.GSON.toJson(new ChannelEditRequest(newName, newPosition, newTopic))),
+            ChannelResponse response = DiscordUtils.GSON.fromJson(
+                    Requests.PATCH.makeRequest(client.getURL() + Endpoints.CHANNELS + id,
+                    new StringEntity(DiscordUtils.GSON.toJson(
+                            new ChannelEditRequest(newName, newPosition, newTopic))),
                     new BasicNameValuePair("authorization", client.getToken()),
-                    new BasicNameValuePair("content-type", "application/json"));
+                    new BasicNameValuePair("content-type", "application/json")), ChannelResponse.class);
+            Channel oldChannel = copy();
+            Channel newChannel = DiscordUtils.getChannelFromJSON(client, getGuild(), response);
+
+            client.getDispatcher().dispatch(new ChannelUpdateEvent(oldChannel, newChannel));
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "Error editing channel: " + e);
         }
     }
 
-    /**
-     * Changes the name of the channel
-     *
-     * @param name The new name of the channel.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeName(String name) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(name, null, null);
-    }
-
-    /**
-     * Changes the position of the channel
-     *
-     * @param position The new position of the channel.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changePosition(int position) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, position, null);
-    }
-
-    /**
-     * Changes the topic of the channel
-     *
-     * @param topic The new topic of the channel.
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeTopic(String topic) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, null, topic);
+    public Channel copy() {
+        return new Channel(client, name, id, parent, topic, position, roleOverrides, userOverrides);
     }
 
     /**
@@ -724,40 +555,8 @@ public class Channel {
         return invites;
     }
 
-    /**
-     * This calculates the time at which this object has been created by analyzing its Discord ID.
-     *
-     * @return The time at which this object was created.
-     */
-    public Date getCreationDate() {
-        return DiscordUtils.getSnowflakeTimeFromID(id);
-    }
-
-    /**
-     * This gets the client that this object is tied to.
-     *
-     * @return The client.
-     */
-    public DiscordClient getClient() {
-        return client;
-    }
-
     @Override
     public String toString() {
         return mention();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) && ((Channel) other).getID().equals(getID());
-    }
-
-    /**
-     * Sets the CACHED typing status.
-     *
-     * @param typingStatus The new typing status.
-     */
-    public void setTypingStatus(boolean typingStatus) {
-        this.isTyping.set(typingStatus);
     }
 }

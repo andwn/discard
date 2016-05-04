@@ -21,12 +21,7 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
 /**
  * Represents a discord message.
  */
-public class Message {
-
-    /**
-     * The ID of the message. Used for message updating.
-     */
-    protected final String id;
+public class Message extends DiscordObject {
 
     /**
      * The actual message (what you see
@@ -67,18 +62,12 @@ public class Message {
     /**
      * Whether the
      */
-    protected boolean mentionsEveryone, mentionsHere;
-
-    /**
-     * The client that created this object.
-     */
-    protected final DiscordClient client;
+    protected boolean mentionsEveryone;
 
     public Message(DiscordClient client, String id, String content, User user, Channel channel,
                    Date timestamp, Date editedTimestamp, boolean mentionsEveryone,
-                   boolean mentionsHere, List<String> mentions, List<Attachment> attachments) {
-        this.client = client;
-        this.id = id;
+                   List<String> mentions, List<Attachment> attachments) {
+        super(client, id);
         this.content = content;
         this.author = user;
         this.channel = channel;
@@ -87,7 +76,6 @@ public class Message {
         this.mentions = mentions;
         this.attachments = attachments;
         this.mentionsEveryone = mentionsEveryone;
-        this.mentionsHere = mentionsHere;
     }
 
     /**
@@ -142,15 +130,6 @@ public class Message {
      */
     public User getAuthor() {
         return author;
-    }
-
-    /**
-     * Gets the message id.
-     *
-     * @return The id.
-     */
-    public String getID() {
-        return id;
     }
 
     /**
@@ -229,8 +208,7 @@ public class Message {
                     new BasicNameValuePair("authorization", client.getToken()),
                     new BasicNameValuePair("content-type", "application/json")), MessageResponse.class);
 
-            Message oldMessage = new Message(client, this.id, this.content, author, channel, timestamp,
-                    editedTimestamp, mentionsEveryone, mentionsHere, mentions, attachments);
+            Message oldMessage = copy();
             DiscordUtils.getMessageFromJSON(client, channel, response);
             //Event dispatched here because otherwise there'll be an NPE as for some reason when the bot edits a message,
             // the event chain goes like this:
@@ -262,30 +240,12 @@ public class Message {
     }
 
     /**
-     * Returns whether this message mentions here.
-     *
-     * @return True if it mentions here, false if otherwise.
-     */
-    public boolean mentionsHere() {
-        return mentionsHere;
-    }
-
-    /**
      * CACHES whether the message mentions everyone.
      *
      * @param mentionsEveryone True to mention everyone false if otherwise.
      */
     public void setMentionsEveryone(boolean mentionsEveryone) {
         this.mentionsEveryone = mentionsEveryone;
-    }
-
-    /**
-     * CACHES whether the message mentions @here.
-     *
-     * @param mentionsHere True to mention @here false if otherwise.
-     */
-    public void setMentionsHere(boolean mentionsHere) {
-        this.mentionsHere = mentionsHere;
     }
 
     /**
@@ -308,32 +268,6 @@ public class Message {
     }
 
     /**
-     * Acknowledges a message and all others before it (marks it as "read").
-     *
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     */
-    public void acknowledge() throws HTTP429Exception, DiscordException {
-        Requests.POST.makeRequest(client.getURL() + Endpoints.CHANNELS+getChannel().getID()+"/messages/"+getID()+"/ack",
-                new BasicNameValuePair("authorization", client.getToken()));
-        channel.setLastReadMessageID(getID());
-    }
-
-    /**
-     * Checks if the message has been read by this account.
-     *
-     * @return True if the message has been read, false if otherwise.
-     */
-    public boolean isAcknowledged() {
-        if (channel.getLastReadMessageID().equals(getID()))
-            return true;
-
-        Message lastRead = channel.getLastReadMessage();
-        Date timeStamp = lastRead.getTimestamp();
-        return timeStamp.compareTo(getTimestamp()) >= 0;
-    }
-
-    /**
      * Gets the time that this message was last edited.
      *
      * @return The edited timestamp.
@@ -352,15 +286,6 @@ public class Message {
     }
 
     /**
-     * This calculates the time at which this object has been created by analyzing its Discord ID.
-     *
-     * @return The time at which this object was created.
-     */
-    public Date getCreationDate() {
-        return DiscordUtils.getSnowflakeTimeFromID(id);
-    }
-
-    /**
      * Gets the guild this message is from.
      *
      * @return The guild.
@@ -369,22 +294,13 @@ public class Message {
         return getChannel().getGuild();
     }
 
-    /**
-     * This gets the client that this object is tied to.
-     *
-     * @return The client.
-     */
-    public DiscordClient getClient() {
-        return client;
-    }
-
     @Override
     public String toString() {
         return content;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) && ((Message) other).getID().equals(getID());
+    public Message copy() {
+        return new Message(client, id, content, author, channel, timestamp,
+                editedTimestamp, mentionsEveryone, mentions, attachments);
     }
 }

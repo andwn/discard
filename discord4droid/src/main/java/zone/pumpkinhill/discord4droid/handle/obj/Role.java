@@ -1,13 +1,13 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Date;
 import java.util.EnumSet;
 
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.DiscordUtils;
 import zone.pumpkinhill.discord4droid.api.Endpoints;
 import zone.pumpkinhill.discord4droid.api.Requests;
+import zone.pumpkinhill.discord4droid.handle.events.RoleUpdateEvent;
 import zone.pumpkinhill.discord4droid.json.generic.RoleResponse;
 import zone.pumpkinhill.discord4droid.json.requests.RoleEditRequest;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
@@ -19,7 +19,7 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
 /**
  * Represents a role.
  */
-public class Role {
+public class Role extends DiscordObject {
 
     /**
      * Where the role should be displayed. -1 is @everyone, it is always last
@@ -29,6 +29,7 @@ public class Role {
     /**
      * The permissions the role has.
      */
+    protected int permissionsNumber;
     protected EnumSet<Permissions> permissions;
 
     /**
@@ -40,11 +41,6 @@ public class Role {
      * Whether this role is managed via plugins like twitch
      */
     protected boolean managed;
-
-    /**
-     * The role id
-     */
-    protected String id;
 
     /**
      * Whether to display this role separately from others
@@ -61,13 +57,14 @@ public class Role {
      */
     protected Guild guild;
 
-    public Role(int position, int permissions, String name, boolean managed, String id,
-                boolean hoist, int color, Guild guild) {
+    public Role(DiscordClient client, int position, int permissions, String name, boolean managed,
+                String id, boolean hoist, int color, Guild guild) {
+        super(client, id);
         this.position = position;
+        this.permissionsNumber = permissions;
         this.permissions = Permissions.getAllowedPermissionsForNumber(permissions);
         this.name = name;
         this.managed = managed;
-        this.id = id;
         this.hoist = hoist;
         this.color = color;
         this.guild = guild;
@@ -137,15 +134,6 @@ public class Role {
     }
 
     /**
-     * Gets the unique id of the role.
-     *
-     * @return The role id.
-     */
-    public String getID() {
-        return id;
-    }
-
-    /**
      * Gets whether the role is hoisted–meaning that it is displayed separately from the @everyone role.
      *
      * @return True if hoisted, false if otherwise.
@@ -190,7 +178,7 @@ public class Role {
         return guild;
     }
 
-    private void edit(Integer color, Boolean hoist, String name, EnumSet<Permissions> permissions) throws MissingPermissionsException, HTTP429Exception, DiscordException {
+    public void edit(Integer color, Boolean hoist, String name, EnumSet<Permissions> permissions) throws MissingPermissionsException, HTTP429Exception, DiscordException {
         DiscordUtils.checkPermissions(guild.client, guild, EnumSet.of(Permissions.MANAGE_ROLES));
 
         try {
@@ -203,61 +191,12 @@ public class Role {
                             permissions == null ? getPermissions() : permissions))),
                     new BasicNameValuePair("authorization", guild.client.getToken()),
                     new BasicNameValuePair("content-type", "application/json")), RoleResponse.class);
+            Role oldRole = copy();
+            Role newRole = DiscordUtils.getRoleFromJSON(client, guild, response);
+            client.getDispatcher().dispatch(new RoleUpdateEvent(oldRole, newRole, guild));
         } catch (UnsupportedEncodingException e) {
             System.out.println("Discord4Droid Internal Exception: " + e);
         }
-    }
-
-    /**
-     * Changes the color of the role.
-     *
-     * @param color The new color for the role.
-     *
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeColor(int color) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(color, null, null, null);
-    }
-
-    /**
-     * Changes whether to hoist the role.
-     *
-     * @param hoist Whether to hoist the role.
-     *
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeHoist(boolean hoist) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, hoist, null, null);
-    }
-
-    /**
-     * Changes the name of the role.
-     *
-     * @param name The new name for the role.
-     *
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changeName(String name) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, null, name, null);
-    }
-
-    /**
-     * Changes the permissions of the role.
-     *
-     * @param permissions The new permissions for the role.
-     *
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     * @throws MissingPermissionsException
-     */
-    public void changePermissions(EnumSet<Permissions> permissions) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        edit(null, null, null, permissions);
     }
 
     /**
@@ -274,31 +213,12 @@ public class Role {
                 new BasicNameValuePair("authorization", ((Guild) guild).client.getToken()));
     }
 
-    /**
-     * This calculates the time at which this object has been created by analyzing its Discord ID.
-     *
-     * @return The time at which this object was created.
-     */
-    public Date getCreationDate() {
-        return DiscordUtils.getSnowflakeTimeFromID(id);
-    }
-
-    /**
-     * This gets the client that this object is tied to.
-     *
-     * @return The client.
-     */
-    public DiscordClient getClient() {
-        return guild.getClient();
-    }
-
     @Override
     public String toString() {
         return name;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) && ((Role) other).getID().equals(getID());
+    public Role copy() {
+        return new Role(client, position, permissionsNumber, name, managed, id, hoist, color, guild);
     }
 }

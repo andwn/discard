@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -12,7 +11,7 @@ import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.DiscordUtils;
 import zone.pumpkinhill.discord4droid.api.Endpoints;
 import zone.pumpkinhill.discord4droid.api.Requests;
-import zone.pumpkinhill.discord4droid.handle.AudioChannel;
+import zone.pumpkinhill.discord4droid.handle.events.GuildUpdateEvent;
 import zone.pumpkinhill.discord4droid.json.generic.RoleResponse;
 import zone.pumpkinhill.discord4droid.json.requests.ChannelCreateRequest;
 import zone.pumpkinhill.discord4droid.json.requests.EditGuildRequest;
@@ -33,77 +32,20 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
 /**
  * This class defines a guild/server/clan/whatever it's called.
  */
-public class Guild {
+public class Guild extends DiscordObject {
     private final static String TAG = Guild.class.getCanonicalName();
 
-    /**
-     * All text channels in the guild.
-     */
     protected final List<Channel> channels;
-
-    /**
-     * All voice channels in the guild.
-     */
     protected final List<VoiceChannel> voiceChannels;
 
-    /**
-     * All users connected to the guild.
-     */
     protected final List<User> users;
-
-    /**
-     * The name of the guild.
-     */
-    protected String name;
-
-    /**
-     * The ID of this guild.
-     */
-    protected final String id;
-
-    /**
-     * The location of the guild icon
-     */
-    protected String icon;
-
-    /**
-     * The url pointing to the guild icon
-     */
-    protected String iconURL;
-
-    /**
-     * The user id for the owner of the guild
-     */
-    protected String ownerID;
-
-    /**
-     * The roles the guild contains.
-     */
     protected final List<Role> roles;
 
-    /**
-     * The channel where those who are afk are moved to.
-     */
+    protected String name, icon, iconURL;
+    protected String ownerID, regionID;
+
     protected String afkChannel;
-    /**
-     * The time in seconds for a user to be idle to be determined as "afk".
-     */
     protected int afkTimeout;
-
-    /**
-     * The region this guild is located in.
-     */
-    protected String regionID;
-
-    /**
-     * This guild's audio channel.
-     */
-    protected AudioChannel audioChannel;
-
-    /**
-     * The client that created this object.
-     */
-    protected final DiscordClient client;
 
     public Guild(DiscordClient client, String name, String id, String icon, String ownerID,
                  String afkChannel, int afkTimeout, String region) {
@@ -114,12 +56,11 @@ public class Guild {
     public Guild(DiscordClient client, String name, String id, String icon, String ownerID,
                  String afkChannel, int afkTimeout, String region, List<Role> roles,
                  List<Channel> channels, List<VoiceChannel> voiceChannels, List<User> users) {
-        this.client = client;
+        super(client, id);
         this.name = name;
         this.voiceChannels = voiceChannels;
         this.channels = channels;
         this.users = users;
-        this.id = id;
         this.icon = icon;
         this.iconURL = String.format(client.getCDN() + Endpoints.ICONS, this.id, this.icon);
         this.ownerID = ownerID;
@@ -127,7 +68,6 @@ public class Guild {
         this.afkChannel = afkChannel;
         this.afkTimeout = afkTimeout;
         this.regionID = region;
-        this.audioChannel = new AudioChannel(client);
     }
 
     /**
@@ -149,15 +89,6 @@ public class Guild {
     }
 
     /**
-     * Sets the CACHED owner id.
-     *
-     * @param id The user if of the new owner.
-     */
-    public void setOwnerID(String id) {
-        ownerID = id;
-    }
-
-    /**
      * Gets the icon id for this guild.
      *
      * @return The icon id.
@@ -173,16 +104,6 @@ public class Guild {
      */
     public String getIconURL() {
         return iconURL;
-    }
-
-    /**
-     * Sets the CACHED icon id for the guild.
-     *
-     * @param icon The icon id.
-     */
-    public void setIcon(String icon) {
-        this.icon = icon;
-        this.iconURL = String.format(client.getCDN() + Endpoints.ICONS, this.id, this.icon);
     }
 
     /**
@@ -241,60 +162,12 @@ public class Guild {
     }
 
     /**
-     * Sets the CACHED name of the guild.
-     *
-     * @param name The name.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets the id of the guild.
-     *
-     * @return The ID of this guild.
-     */
-    public String getID() {
-        return id;
-    }
-
-    /**
-     * CACHES a user to the guild.
-     *
-     * @param user The user.
-     */
-    public void addUser(User user) {
-        if (user != null && !this.users.contains(user))
-            this.users.add(user);
-    }
-
-    /**
-     * CACHES a channel to the guild.
-     *
-     * @param channel The channel.
-     */
-    public void addChannel(Channel channel) {
-        if (!this.channels.contains(channel) && !(channel instanceof VoiceChannel) && !(channel instanceof PrivateChannel))
-            this.channels.add(channel);
-    }
-
-    /**
      * Gets the roles contained in this guild.
      *
      * @return The list of roles in the guild.
      */
     public List<Role> getRoles() {
         return roles;
-    }
-
-    /**
-     * CACHES a role to the guild.
-     *
-     * @param role The role.
-     */
-    public void addRole(Role role) {
-        if (!this.roles.contains(role))
-            this.roles.add(role);
     }
 
     /**
@@ -378,7 +251,7 @@ public class Guild {
         RoleResponse response = DiscordUtils.GSON.fromJson(
                 Requests.POST.makeRequest(client.getURL() + Endpoints.GUILDS + id + "/roles",
                 new BasicNameValuePair("authorization", client.getToken())), RoleResponse.class);
-        return DiscordUtils.getRoleFromJSON(this, response);
+        return DiscordUtils.getRoleFromJSON(client, this, response);
     }
 
     /**
@@ -404,26 +277,14 @@ public class Guild {
      * Bans a user from this guild.
      *
      * @param user The user to ban.
-     *
-     * @throws MissingPermissionsException
-     * @throws HTTP429Exception
-     * @throws DiscordException
-     */
-    public void banUser(User user) throws MissingPermissionsException, HTTP429Exception, DiscordException {
-        banUser(user, 0);
-    }
-
-    /**
-     * Bans a user from this guild.
-     *
-     * @param user The user to ban.
      * @param deleteMessagesForDays The number of days to delete messages from this user for.
      *
      * @throws MissingPermissionsException
      * @throws HTTP429Exception
      * @throws DiscordException
      */
-    public void banUser(User user, int deleteMessagesForDays) throws MissingPermissionsException, HTTP429Exception, DiscordException {
+    public void banUser(User user, int deleteMessagesForDays)
+            throws MissingPermissionsException, HTTP429Exception, DiscordException {
         DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.BAN));
 
         Requests.PUT.makeRequest(client.getURL() + Endpoints.GUILDS + id + "/bans/" +
@@ -500,9 +361,18 @@ public class Guild {
                             afkTimeout == null ? this.afkTimeout : afkTimeout))),
                     new BasicNameValuePair("authorization", client.getToken()),
                     new BasicNameValuePair("content-type", "application/json")), GuildResponse.class);
+
+            Guild oldGuild = copy();
+            Guild newGuild = DiscordUtils.getGuildFromJSON(client, response);
+            client.getDispatcher().dispatch(new GuildUpdateEvent(oldGuild, newGuild));
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "Error editing guild: " + e);
         }
+    }
+
+    public Guild copy() {
+        return new Guild(client, name, id, icon, ownerID, afkChannel, afkTimeout, regionID, roles, channels,
+                voiceChannels, users);
     }
 
     /**
@@ -626,15 +496,6 @@ public class Guild {
      */
     public Region getRegion() {
         return client.getRegionByID(regionID);
-    }
-
-    /**
-     * CACHES the region for this guild.
-     *
-     * @param regionID The region.
-     */
-    public void setRegion(String regionID) {
-        this.regionID = regionID;
     }
 
     /**
@@ -764,37 +625,28 @@ public class Guild {
         return response.pruned;
     }
 
-    /**
-     * This calculates the time at which this object has been created by analyzing its Discord ID.
-     *
-     * @return The time at which this object was created.
-     */
-    public Date getCreationDate() {
-        return DiscordUtils.getSnowflakeTimeFromID(id);
+    // Cached stuff
+    public void setOwnerID(String id) {
+        ownerID = id;
     }
-
-    /**
-     * Gets the audio channel of this guild. This throws an exception if the bot isn't in a channel yet.
-     *
-     * @return The audio channel.
-     *
-     * @throws DiscordException
-     */
-    public AudioChannel getAudioChannel() throws DiscordException {
-        return audioChannel;
+    public void setIcon(String icon) {
+        this.icon = icon;
+        this.iconURL = String.format(client.getCDN() + Endpoints.ICONS, this.id, this.icon);
     }
-
-    /**
-     * This gets the client that this object is tied to.
-     *
-     * @return The client.
-     */
-    public DiscordClient getClient() {
-        return client;
+    public void setName(String name) { this.name = name; }
+    public void addUser(User user) {
+        if (user != null && !this.users.contains(user))
+            this.users.add(user);
     }
-
-    @Override
-    public boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) && ((Guild) other).getID().equals(getID());
+    public void addChannel(Channel channel) {
+        if (!this.channels.contains(channel) && !(channel instanceof VoiceChannel) && !(channel instanceof PrivateChannel))
+            this.channels.add(channel);
+    }
+    public void addRole(Role role) {
+        if (!this.roles.contains(role))
+            this.roles.add(role);
+    }
+    public void setRegion(String regionID) {
+        this.regionID = regionID;
     }
 }

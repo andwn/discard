@@ -1,7 +1,7 @@
 package zone.pumpkinhill.discord4droid.json.responses.events;
 
 import zone.pumpkinhill.discord4droid.json.generic.GameObject;
-import zone.pumpkinhill.discord4droid.json.responses.PresenceResponse;
+import zone.pumpkinhill.discord4droid.json.responses.UserResponse;
 
 /**
  * This is received when a user's presence changes
@@ -11,7 +11,7 @@ public class PresenceUpdateEventResponse {
     /**
      * The user this represents
      */
-    public PresenceResponse.UserResponse user;
+    public UserResponse user;
 
     /**
      * The status for the user, either: "idle" or "online"

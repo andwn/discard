@@ -2,7 +2,6 @@ package zone.pumpkinhill.discord4droid.handle.obj;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +20,7 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
 /**
  * This class defines the Discord user.
  */
-public class User {
+public class User extends DiscordObject {
 
     /**
      * Display name of the user.
@@ -39,20 +38,10 @@ public class User {
     protected String game;
 
     /**
-     * User ID.
-     */
-    protected final String id;
-
-    /**
      * User discriminator.
      * Distinguishes users with the same name.
      */
     protected String discriminator;
-
-    /**
-     * Whether this user is a bot or not.
-     */
-    protected boolean isBot;
 
     /**
      * This user's presence.
@@ -75,30 +64,14 @@ public class User {
      */
     protected VoiceChannel channel;
 
-    /**
-     * The client that created this object.
-     */
-    protected final DiscordClient client;
-
-    public User(DiscordClient client, String name, String id, String discriminator, String avatar, Presences presence, boolean isBot) {
-        this.client = client;
-        this.id = id;
+    public User(DiscordClient client, String name, String id, String discriminator, String avatar, Presences presence) {
+        super(client, id);
         this.name = name;
         this.discriminator = discriminator;
         this.avatar = avatar;
         this.avatarURL = String.format(client.getCDN() + Endpoints.AVATARS, this.id, this.avatar);
         this.presence = presence;
         this.roles = new HashMap<>();
-        this.isBot = isBot;
-    }
-
-    /**
-     * Gets the user's unique id.
-     *
-     * @return The user's id.
-     */
-    public String getID() {
-        return id;
     }
 
     /**
@@ -241,31 +214,6 @@ public class User {
     }
 
     /**
-     * This calculates the time at which this object has been created by analyzing its Discord ID.
-     *
-     * @return The time at which this object was created.
-     */
-    public Date getCreationDate() {
-        return DiscordUtils.getSnowflakeTimeFromID(id);
-    }
-
-    /**
-     * Gets whether or not this user is a bot.
-     *
-     * @return True if a bot, false if otherwise.
-     */
-    public boolean isBot() {
-        return isBot;
-    }
-
-    /**
-     * Sets the CACHED isBot status to true.
-     */
-    public void convertToBot() {
-        isBot = true;
-    }
-
-    /**
      * Moves this user to a different voice channel.
      *
      * @param newChannel The new channel the user should move to.
@@ -306,22 +254,12 @@ public class User {
         this.channel = channel;
     }
 
-    /**
-     * This gets the client that this object is tied to.
-     *
-     * @return The client.
-     */
-    public DiscordClient getClient() {
-        return client;
-    }
-
     @Override
     public String toString() {
         return mention();
     }
 
-    @Override
-    public boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) && ((User) other).getID().equals(getID());
+    public User copy() {
+        return new User(client, name, id, discriminator, avatar, presence);
     }
 }

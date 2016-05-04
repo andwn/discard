@@ -54,17 +54,12 @@ public abstract class DiscordAdapter extends BaseAdapter {
         return true;
     }
 
-    protected static boolean getThumbnail(ImageView view, Attachment attachment) {
-        String thumbURL = attachment.getThumbnailURL();
-        if(thumbURL != null && !thumbURL.isEmpty()) {
-            return getAvatarOrIcon(view, attachment.getId(), thumbURL);
-        } else {
-            return getLinkImage(view, attachment.getId(), attachment.getUrl());
-        }
-    }
-
     protected static boolean getLinkImage(ImageView view, String id, String url) {
         return isImageFilename(url) && getAvatarOrIcon(view, id, url);
+    }
+
+    protected static boolean getThumbnail(ImageView view, Attachment attachment) {
+        return getLinkImage(view, attachment.getID(), attachment.getUrl());
     }
 
     protected static boolean isImageFilename(String text) {

@@ -1,6 +1,7 @@
 package zone.pumpkinhill.discord4droid.handle.events;
 
 import zone.pumpkinhill.discord4droid.api.Event;
+import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.handle.obj.VoiceChannel;
 
 /**
@@ -8,20 +9,18 @@ import zone.pumpkinhill.discord4droid.handle.obj.VoiceChannel;
  */
 public class UserVoiceChannelLeaveEvent extends Event {
 
-    /**
-     * The channel the user left.
-     */
+    private final User user;
     private final VoiceChannel oldChannel;
 
-    public UserVoiceChannelLeaveEvent(VoiceChannel oldChannel) {
+    public UserVoiceChannelLeaveEvent(User user, VoiceChannel oldChannel) {
+        this.user = user;
         this.oldChannel = oldChannel;
     }
 
-    /**
-     * Gets the voice channel this user left.
-     *
-     * @return The voice channel.
-     */
+    public User getUser() {
+        return user;
+    }
+
     public VoiceChannel getChannel() {
         return oldChannel;
     }

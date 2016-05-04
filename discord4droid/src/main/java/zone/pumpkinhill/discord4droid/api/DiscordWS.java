@@ -62,6 +62,7 @@ import zone.pumpkinhill.discord4droid.handle.events.UserVoiceStateUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceChannelCreateEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceChannelDeleteEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceChannelUpdateEvent;
+import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
@@ -154,22 +155,11 @@ public class DiscordWS extends WebSocketAdapter {
             executorService.shutdownNow();
             socket.disconnect();
             client.ws = null;
-            if(reason != DiscordDisconnectedEvent.Reason.SUSPENDED &&
-                    reason != DiscordDisconnectedEvent.Reason.UNKNOWN) clearCache();
+            for (DiscordVoiceWS vws : client.voiceConnections.values()) {
+                vws.disconnect(VoiceDisconnectedEvent.Reason.RECONNECTING);
+            }
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
         }
-    }
-
-    private void clearCache() {
-        client.sessionId = null;
-        client.connectedVoiceChannels.clear();
-        client.voiceConnections.clear();
-        client.guildList.clear();
-        client.heartbeat = 0;
-        client.lastSequence = 0;
-        client.ourUser = null;
-        client.privateChannels.clear();
-        client.REGIONS.clear();
     }
 
     /**
@@ -268,7 +258,7 @@ public class DiscordWS extends WebSocketAdapter {
         }
         int op = object.get("op").getAsInt();
 
-        if (op != GatewayOps.RECONNECT.ordinal()) //Not a redirect op, so cache the last sequence value
+        if (object.has("s"))
             client.lastSequence = object.get("s").getAsInt();
 
         if (op == GatewayOps.DISPATCH.ordinal()) { //Event dispatched
@@ -480,7 +470,7 @@ public class DiscordWS extends WebSocketAdapter {
 
                 if (message.getAuthor().equals(client.getOurUser())) {
                     client.dispatcher.dispatch(new MessageSendEvent(message));
-                    message.getChannel().setTypingStatus(false); //Messages being sent should stop the bot from typing
+                    //message.getChannel().setTypingStatus(false); //Messages being sent should stop the bot from typing
                 } else {
                     client.dispatcher.dispatch(new MessageReceivedEvent(message));
                 }
@@ -568,7 +558,7 @@ public class DiscordWS extends WebSocketAdapter {
         if (toUpdate != null) {
             Message oldMessage = new Message(client, toUpdate.getID(), toUpdate.getContent(), toUpdate.getAuthor(),
                     toUpdate.getChannel(), toUpdate.getTimestamp(), toUpdate.getEditedTimestamp(),
-                    toUpdate.mentionsEveryone(), toUpdate.mentionsHere(), toUpdate.getRawMentions(), toUpdate.getAttachments());
+                    toUpdate.mentionsEveryone(), toUpdate.getRawMentions(), toUpdate.getAttachments());
             toUpdate = DiscordUtils.getMessageFromJSON(client, channel, event);
             client.dispatcher.dispatch(new MessageUpdateEvent(oldMessage, toUpdate));
         }
@@ -607,6 +597,12 @@ public class DiscordWS extends WebSocketAdapter {
                     user.setGame(gameName);
                     client.dispatcher.dispatch(new GameChangeEvent(guild, user, oldGame, gameName));
                     Log.i(TAG, "User \""+user.getName()+"\" changed game to "+ gameName);
+                }
+                User newUser = client.getUserByID(event.user.id);
+                if (newUser != null) {
+                    User oldUser = new User(client, newUser.getName(), newUser.getID(), newUser.getDiscriminator(), newUser.getAvatar(), newUser.getPresence());
+                    newUser = DiscordUtils.getUserFromJSON(client, event.user);
+                    client.dispatcher.dispatch(new UserUpdateEvent(oldUser, newUser));
                 }
             }
         }
@@ -681,7 +677,7 @@ public class DiscordWS extends WebSocketAdapter {
         UserUpdateEventResponse event = DiscordUtils.GSON.fromJson(eventObject, UserUpdateEventResponse.class);
         User newUser = client.getUserByID(event.id);
         if (newUser != null) {
-            User oldUser = new User(client, newUser.getName(), newUser.getID(), newUser.getDiscriminator(), newUser.getAvatar(), newUser.getPresence(), newUser.isBot());
+            User oldUser = new User(client, newUser.getName(), newUser.getID(), newUser.getDiscriminator(), newUser.getAvatar(), newUser.getPresence());
             newUser = DiscordUtils.getUserFromJSON(client, event);
             client.dispatcher.dispatch(new UserUpdateEvent(oldUser, newUser));
         }
@@ -764,7 +760,7 @@ public class DiscordWS extends WebSocketAdapter {
         GuildRoleEventResponse event = DiscordUtils.GSON.fromJson(eventObject, GuildRoleEventResponse.class);
         Guild guild = client.getGuildByID(event.guild_id);
         if (guild != null) {
-            Role role = DiscordUtils.getRoleFromJSON(guild, event.role);
+            Role role = DiscordUtils.getRoleFromJSON(client, guild, event.role);
             guild.addRole(role);
             client.dispatcher.dispatch(new RoleCreateEvent(role, guild));
         }
@@ -776,10 +772,10 @@ public class DiscordWS extends WebSocketAdapter {
         if (guild != null) {
             Role toUpdate = guild.getRoleByID(event.role.id);
             if (toUpdate != null) {
-                Role oldRole = new Role(toUpdate.getPosition(),
+                Role oldRole = new Role(client, toUpdate.getPosition(),
                         Permissions.generatePermissionsNumber(toUpdate.getPermissions()), toUpdate.getName(),
                         toUpdate.isManaged(), toUpdate.getID(), toUpdate.isHoisted(), toUpdate.getColor(), guild);
-                toUpdate = DiscordUtils.getRoleFromJSON(guild, event.role);
+                toUpdate = DiscordUtils.getRoleFromJSON(client, guild, event.role);
                 client.dispatcher.dispatch(new RoleUpdateEvent(oldRole, toUpdate, guild));
             }
         }
@@ -826,15 +822,19 @@ public class DiscordWS extends WebSocketAdapter {
         if (guild != null) {
             VoiceChannel channel = guild.getVoiceChannelByID(event.channel_id);
             User user = guild.getUserByID(event.user_id);
-            VoiceChannel oldChannel = user.getVoiceChannel();
-            user.setVoiceChannel(channel);
-            if (channel != oldChannel) {
-                if (channel == null) {
-                    client.dispatcher.dispatch(new UserVoiceChannelLeaveEvent(oldChannel));
-                } else if (oldChannel == null) {
-                    client.dispatcher.dispatch(new UserVoiceChannelJoinEvent(channel));
+            if (user != null) {
+                VoiceChannel oldChannel = user.getVoiceChannel();
+                user.setVoiceChannel(channel);
+                if (channel != oldChannel) {
+                    if (channel == null) {
+                        client.dispatcher.dispatch(new UserVoiceChannelLeaveEvent(user, oldChannel));
+                    } else if (oldChannel == null) {
+                        client.dispatcher.dispatch(new UserVoiceChannelJoinEvent(user, channel));
+                    } else {
+                        client.dispatcher.dispatch(new UserVoiceChannelMoveEvent(user, oldChannel, channel));
+                    }
                 } else {
-                    client.dispatcher.dispatch(new UserVoiceChannelMoveEvent(oldChannel, channel));
+                    client.dispatcher.dispatch(new UserVoiceStateUpdateEvent(user, channel, event.self_mute, event.self_deaf, event.mute, event.deaf, event.suppress));
                 }
             } else {
                 client.dispatcher.dispatch(new UserVoiceStateUpdateEvent(user, channel, event.self_mute, event.self_deaf, event.mute, event.deaf, event.suppress));

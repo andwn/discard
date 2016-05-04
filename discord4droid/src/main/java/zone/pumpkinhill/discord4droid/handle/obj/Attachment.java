@@ -1,45 +1,24 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
-import android.util.Log;
+import zone.pumpkinhill.discord4droid.api.DiscordClient;
 
 /**
  * Represents an attachment included in the message.
  */
-public class Attachment {
-
-    /**
-     * The file name of the attachment.
-     */
+public class Attachment extends DiscordObject {
     protected final String filename;
-
-    /**
-     * The size, in bytes of the attachment.
-     */
     protected final int filesize;
-
-    /**
-     * The attachment id.
-     */
-    protected final String id;
-
-    /**
-     * The download link for the attachment.
-     */
     protected final String url;
 
-    protected String thumbnailUrl;
-
-    public Attachment(String filename, int filesize, String id, String url) {
+    public Attachment(DiscordClient client, String filename, int filesize, String id, String url) {
+        super(client, id);
         this.filename = filename;
         this.filesize = filesize;
-        this.id = id;
         this.url = url;
-        Log.d("Att", "ID: " + id);
     }
 
     /**
      * Gets the file name for the attachment.
-     *
      * @return The file name of the attachment.
      */
     public String getFilename() {
@@ -48,7 +27,6 @@ public class Attachment {
 
     /**
      * Gets the size of the attachment.
-     *
      * @return The size, in bytes of the attachment.
      */
     public int getFilesize() {
@@ -56,29 +34,15 @@ public class Attachment {
     }
 
     /**
-     * Gets the id of the attachment.
-     *
-     * @return The attachment id.
-     */
-    public String getId() {
-        return id;
-    }
-
-    /**
      * Gets the direct link to the attachment.
-     *
      * @return The download link for the attachment.
      */
     public String getUrl() {
         return url;
     }
 
-    public void setThumbnailURL(String url) {
-        thumbnailUrl = url;
-    }
-
-    public String getThumbnailURL() {
-        return thumbnailUrl;
+    public Attachment copy() {
+        return new Attachment(client, filename, filesize, id, url);
     }
 }
 

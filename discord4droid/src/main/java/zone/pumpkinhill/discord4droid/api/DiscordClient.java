@@ -11,17 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 import zone.pumpkinhill.discord4droid.Constants;
-import zone.pumpkinhill.discord4droid.handle.AudioChannel;
 import zone.pumpkinhill.discord4droid.handle.events.DiscordDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
-import zone.pumpkinhill.discord4droid.handle.obj.Channel;
-import zone.pumpkinhill.discord4droid.handle.obj.Guild;
-import zone.pumpkinhill.discord4droid.handle.obj.Invite;
-import zone.pumpkinhill.discord4droid.handle.obj.Presences;
-import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
-import zone.pumpkinhill.discord4droid.handle.obj.Region;
-import zone.pumpkinhill.discord4droid.handle.obj.User;
-import zone.pumpkinhill.discord4droid.handle.obj.VoiceChannel;
+import zone.pumpkinhill.discord4droid.handle.obj.*;
 import zone.pumpkinhill.discord4droid.json.requests.AccountInfoChangeRequest;
 import zone.pumpkinhill.discord4droid.json.requests.CreateGuildRequest;
 import zone.pumpkinhill.discord4droid.json.requests.LoginRequest;
@@ -44,7 +36,7 @@ import zone.pumpkinhill.http.message.BasicNameValuePair;
  * This class receives and sends messages, as well as holds our user data.
  */
 public final class DiscordClient {
-    private final static String TAG = DiscordClient.class.getCanonicalName();
+    private final static String TAG = DiscordClient.class.getSimpleName();
 
     /**
      * Used for keep alive. Keeps last time (in ms)
@@ -177,22 +169,6 @@ public final class DiscordClient {
      */
     public EventDispatcher getDispatcher() {
         return dispatcher;
-    }
-
-    /**
-     * Gets the audio channel instance for this client.
-     *
-     * @return The audio channel.
-     * @deprecated See {@link VoiceChannel#getAudioChannel()} or {@link Guild#getAudioChannel()}
-     */
-    public AudioChannel getAudioChannel() {
-        if (getConnectedVoiceChannels().get(0) != null)
-            try {
-                return getConnectedVoiceChannels().get(0).getAudioChannel();
-            } catch (DiscordException e) {
-                Log.e(TAG, "Error getting audio channel: " + e);
-            }
-        return null;
     }
 
     /**

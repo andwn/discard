@@ -94,21 +94,6 @@ public class PrivateChannel extends Channel {
     }
 
     @Override
-    public void changeName(String name) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void changePosition(int position) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void changeTopic(String topic) throws HTTP429Exception, DiscordException, MissingPermissionsException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String mention() {
         return recipient.mention();
     }

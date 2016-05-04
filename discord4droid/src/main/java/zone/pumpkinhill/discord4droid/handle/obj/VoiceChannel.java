@@ -1,7 +1,5 @@
 package zone.pumpkinhill.discord4droid.handle.obj;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +7,6 @@ import java.util.Map;
 
 import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.DiscordUtils;
-import zone.pumpkinhill.discord4droid.handle.AudioChannel;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.json.requests.VoiceChannelRequest;
 import zone.pumpkinhill.discord4droid.util.DiscordException;
@@ -73,20 +70,6 @@ public class VoiceChannel extends Channel {
     }
 
     /**
-     * Gets the audio channel of this guild. This throws an exception if the bot isn't in this channel yet.
-     *
-     * @return The audio channel.
-     *
-     * @throws DiscordException
-     */
-    public AudioChannel getAudioChannel() throws DiscordException {
-        if (!isConnected())
-            throw new DiscordException("User isn't connected to this channel!");
-
-        return parent.getAudioChannel();
-    }
-
-    /**
      * Checks if this voice channel is connected to by our user.
      *
      * @return True if connected, false if otherwise.
@@ -126,32 +109,12 @@ public class VoiceChannel extends Channel {
     }
 
     @Override
-    public Message sendFile(File file) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public synchronized void toggleTypingStatus() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public synchronized boolean getTypingStatus() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String getLastReadMessageID() {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Message getLastReadMessage() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void changeTopic(String topic) throws HTTP429Exception, DiscordException, MissingPermissionsException {
         throw new UnsupportedOperationException();
     }
 

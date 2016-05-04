@@ -5,7 +5,6 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,7 +45,7 @@ import zone.pumpkinhill.discord4droid.util.MissingPermissionsException;
  * Collection of internal Discord4J utilities.
  */
 public class DiscordUtils {
-    private final static String TAG = DiscordUtils.class.getCanonicalName();
+    private final static String TAG = DiscordUtils.class.getSimpleName();
 
     /**
      * Re-usable instance of Gson.
@@ -56,11 +55,6 @@ public class DiscordUtils {
      * Like {@link #GSON} but it doesn't serialize nulls.
      */
     public static final Gson GSON_NO_NULLS = new GsonBuilder().create();
-
-    /**
-     * Used to determine age based on discord ids
-     */
-    public static final BigInteger DISCORD_EPOCH = new BigInteger("1420070400000");
 
     /**
      * Converts a String timestamp into a java object timestamp.
@@ -94,10 +88,8 @@ public class DiscordUtils {
             user.setAvatar(response.avatar);
             user.setName(response.username);
             user.setDiscriminator(response.discriminator);
-            if (response.bot && !user.isBot())
-                user.convertToBot();
         } else {
-            user = new User(client, response.username, response.id, response.discriminator, response.avatar, Presences.OFFLINE, response.bot);
+            user = new User(client, response.username, response.id, response.discriminator, response.avatar, Presences.OFFLINE);
         }
         return user;
     }
@@ -134,20 +126,14 @@ public class DiscordUtils {
      * @param json The json response to use.
      * @return The attached messages.
      */
-    public static List<Attachment> getAttachmentsFromJSON(MessageResponse json) {
+    public static List<Attachment> getAttachmentsFromJSON(DiscordClient client, MessageResponse json) {
         List<Attachment> attachments = new ArrayList<>();
-        if (json.attachments != null)
+        if(json.attachments != null) {
             for (MessageResponse.AttachmentResponse response : json.attachments) {
-                Attachment a = new Attachment(response.filename, response.size, response.id, response.url);
-                for(MessageResponse.EmbedResponse e : json.embeds) {
-                    if(e.thumbnail != null && e.thumbnail.proxy_url != null) {
-                        a.setThumbnailURL(e.thumbnail.proxy_url);
-                        break;
-                    }
-                }
-                attachments.add(a);
+                attachments.add(new Attachment(client, response.filename, response.size,
+                        response.id, response.url));
             }
-
+        }
         return attachments;
     }
 
@@ -171,7 +157,7 @@ public class DiscordUtils {
 
             List<Role> newRoles = new ArrayList<>();
             for (RoleResponse roleResponse : json.roles) {
-                newRoles.add(getRoleFromJSON(guild, roleResponse));
+                newRoles.add(getRoleFromJSON(client, guild, roleResponse));
             }
             guild.getRoles().clear();
             guild.getRoles().addAll(newRoles);
@@ -188,8 +174,7 @@ public class DiscordUtils {
 
             if (json.roles != null)
                 for (RoleResponse roleResponse : json.roles) {
-                    Role r = getRoleFromJSON(guild, roleResponse);
-                    if(r != null) guild.addRole(r);
+                    getRoleFromJSON(client, guild, roleResponse); //Implicitly adds the role to the guild.
                 }
 
             if (json.members != null)
@@ -288,10 +273,9 @@ public class DiscordUtils {
     public static Message getMessageFromJSON(DiscordClient client, Channel channel, MessageResponse json) {
         Message message;
         if ((message = channel.getMessageByID(json.id)) != null) {
-            message.setAttachments(getAttachmentsFromJSON(json));
+            message.setAttachments(getAttachmentsFromJSON(client, json));
             message.setContent(json.content);
             message.setMentionsEveryone(json.mention_everyone);
-            message.setMentionsHere(json.mention_here);
             message.setMentions(getMentionsFromJSON(json));
             message.setTimestamp(convertFromTimestamp(json.timestamp));
             message.setEditedTimestamp(json.edited_timestamp == null ? null : convertFromTimestamp(json.edited_timestamp));
@@ -300,7 +284,7 @@ public class DiscordUtils {
             return new Message(client, json.id, json.content, getUserFromJSON(client, json.author),
                     channel, convertFromTimestamp(json.timestamp),
                     json.edited_timestamp == null ? null : convertFromTimestamp(json.edited_timestamp),
-                    json.mention_everyone, json.mention_here, getMentionsFromJSON(json), getAttachmentsFromJSON(json));
+                    json.mention_everyone, getMentionsFromJSON(json), getAttachmentsFromJSON(client, json));
     }
 
     /**
@@ -374,7 +358,7 @@ public class DiscordUtils {
      * @param json The json response.
      * @return The role object.
      */
-    public static Role getRoleFromJSON(Guild guild, RoleResponse json) {
+    public static Role getRoleFromJSON(DiscordClient client, Guild guild, RoleResponse json) {
         Role role;
         if ((role = guild.getRoleByID(json.id)) != null) {
             role.setColor(json.color);
@@ -383,7 +367,8 @@ public class DiscordUtils {
             role.setPermissions(json.permissions);
             role.setPosition(json.position);
         } else {
-            role = new Role(json.position, json.permissions, json.name, json.managed, json.id, json.hoist, json.color, guild);
+            role = new Role(client, json.position, json.permissions, json.name, json.managed, json.id, json.hoist, json.color, guild);
+            guild.addRole(role);
         }
         return role;
     }
@@ -461,14 +446,9 @@ public class DiscordUtils {
 
     /**
      * Checks a set of permissions provided by a channel against required permissions.
-     *
-     * @param client The client.
-     * @param channel The channel.
-     * @param required The permissions required.
-     *
-     * @throws MissingPermissionsException This is thrown if the permissions required aren't present.
      */
-    public static void checkPermissions(DiscordClient client, Channel channel, EnumSet<Permissions> required) throws MissingPermissionsException {
+    public static void checkPermissions(DiscordClient client, Channel channel, EnumSet<Permissions> required)
+            throws MissingPermissionsException {
         if(channel instanceof PrivateChannel) return;
         EnumSet<Permissions> contained = channel.getModifiedPermissions(client.getOurUser());
         checkPermissions(contained, required);
@@ -476,14 +456,9 @@ public class DiscordUtils {
 
     /**
      * Checks a set of permissions provided by a guild against required permissions.
-     *
-     * @param client The client.
-     * @param guild The guild.
-     * @param required The permissions required.
-     *
-     * @throws MissingPermissionsException This is thrown if the permissions required aren't present.
      */
-    public static void checkPermissions(DiscordClient client, Guild guild, EnumSet<Permissions> required) throws MissingPermissionsException {
+    public static void checkPermissions(DiscordClient client, Guild guild, EnumSet<Permissions> required)
+            throws MissingPermissionsException {
         EnumSet<Permissions> contained = EnumSet.noneOf(Permissions.class);
         List<Role> roles = client.getOurUser().getRolesForGuild(guild);
         for (Role role : roles) {
@@ -494,13 +469,9 @@ public class DiscordUtils {
 
     /**
      * Checks a set of permissions against required permissions.
-     *
-     * @param contained The permissions contained.
-     * @param required The permissions required.
-     *
-     * @throws MissingPermissionsException This is thrown if the permissions required aren't present.
      */
-    public static void checkPermissions(EnumSet<Permissions> contained, EnumSet<Permissions> required) throws MissingPermissionsException {
+    public static void checkPermissions(EnumSet<Permissions> contained, EnumSet<Permissions> required)
+            throws MissingPermissionsException {
         EnumSet<Permissions> missing = EnumSet.noneOf(Permissions.class);
         for (Permissions requiredPermission : required) {
             if (!contained.contains(requiredPermission)) {
@@ -510,18 +481,5 @@ public class DiscordUtils {
         if (missing.size() > 0) {
             throw new MissingPermissionsException(missing);
         }
-    }
-
-    /**
-     * Gets the time at which a discord id was created.
-     *
-     * @param id The id.
-     * @return The time the id was created.
-     */
-    public static Date getSnowflakeTimeFromID(String id) {
-        long milliseconds = DISCORD_EPOCH.add(new BigInteger(id).shiftRight(22)).longValue();
-        Date date = new Date();
-        date.setTime(milliseconds);
-        return date;
     }
 }
