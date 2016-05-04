@@ -1,6 +1,7 @@
 package zone.pumpkinhill.discard.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -11,29 +12,22 @@ import java.util.List;
 
 import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
-import zone.pumpkinhill.discord4droid.handle.obj.Presences;
+import zone.pumpkinhill.discord4droid.handle.obj.Role;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
 
 public class UserListAdapter extends DiscordAdapter {
     private final Guild mGuild;
-    private final boolean mOnline;
     private List<User> mUserList;
 
-    public UserListAdapter(Context context, Guild guild, boolean online) {
+    public UserListAdapter(Context context, Guild guild) {
         super(context);
         mGuild = guild;
-        mOnline = online;
-        mUserList = populateUserList(mGuild, mOnline);
+        mUserList = populateUserList(mGuild);
     }
 
-    private static List<User> populateUserList(Guild guild, boolean online) {
+    private static List<User> populateUserList(Guild guild) {
         List<User> users = new ArrayList<>();
-        for(User u : guild.getUsers()) {
-            if((online && u.getPresence() != Presences.OFFLINE) ||
-                    (!online && u.getPresence() == Presences.OFFLINE)) {
-                users.add(u);
-            }
-        }
+        for(User u : guild.getUsers()) users.add(u);
         return users;
     }
 
@@ -65,6 +59,16 @@ public class UserListAdapter extends DiscordAdapter {
         // Fill in the text
         TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(user.getName());
+        List<Role> roles = user.getRolesForGuild(mGuild);
+        int color = Color.BLACK; // 0xFF000000
+        for(Role r : roles) {
+            if(r.getColor() != 0) {
+                // Discord colors are RGB, not ARGB, so we "add" to the opaque black
+                color += r.getColor();
+                break;
+            }
+        }
+        name.setTextColor(color);
         // Online status
         TextView status = (TextView) view.findViewById(R.id.statusText);
         status.setText("");

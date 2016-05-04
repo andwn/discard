@@ -10,7 +10,6 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -36,10 +35,7 @@ import zone.pumpkinhill.discard.R;
 import zone.pumpkinhill.discard.adapter.*;
 import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
-import zone.pumpkinhill.discord4droid.handle.events.MessageDeleteEvent;
-import zone.pumpkinhill.discord4droid.handle.events.MessageReceivedEvent;
-import zone.pumpkinhill.discord4droid.handle.events.MessageSendEvent;
-import zone.pumpkinhill.discord4droid.handle.events.ReadyEvent;
+import zone.pumpkinhill.discord4droid.handle.events.*;
 import zone.pumpkinhill.discord4droid.handle.obj.Channel;
 import zone.pumpkinhill.discord4droid.handle.obj.Guild;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
@@ -51,11 +47,14 @@ public class ChatActivity extends BaseActivity {
     private Context mContext = this;
     private Guild mGuild;
     private List<Channel> mChannelList;
-    private Channel mChannel;
-    private ListView mMessageView;
-    private DrawerLayout mLayout;
     private NetworkTask mLoadTask = null;
     private String mEditingMessage = null;
+
+    private Channel mChannel;
+    private ListView mTextChannelView;
+    private ListView mMessageView;
+    private ListView mUserListView;
+    private DrawerLayout mLayout;
     private EditText mInviteTextBox = null;
 
     @Override
@@ -68,12 +67,12 @@ public class ChatActivity extends BaseActivity {
         mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
         ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
         TextView drName = (TextView) findViewById(R.id.guildName);
-        ListView textChannels = (ListView) findViewById(R.id.textChannelList);
+        mTextChannelView = (ListView) findViewById(R.id.textChannelList);
         ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
         // Make sure they aren't null
         assert drIcon != null;
         assert drName != null;
-        assert textChannels != null;
+        assert mTextChannelView != null;
         assert voiceChannels != null;
         // Subscribe to message events so things can be updated in real time
         ClientHelper.subscribe(this);
@@ -96,7 +95,7 @@ public class ChatActivity extends BaseActivity {
             drIcon.setImageResource(R.drawable.ic_menu_camera);
             drName.setText("Direct Messages");
             // Setup adapter for text channel list
-            textChannels.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
+            mTextChannelView.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
             // Disable the user list drawer
             mLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
             // Clear the "Text Channels" and "Voice Channels" text
@@ -126,19 +125,16 @@ public class ChatActivity extends BaseActivity {
             drIcon.setImageBitmap(ClientHelper.cache.get(mGuild.getID()));
             drName.setText(mGuild.getName());
             // Setup adapter for text channel list
-            textChannels.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));
+            mTextChannelView.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));
             // Setup adapter for voice channel list
             voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
             // Setup user list drawer
-            ListView online = (ListView) findViewById(R.id.onlineUserList);
-            ListView offline = (ListView) findViewById(R.id.offlineUserList);
-            assert online != null;
-            assert offline != null;
-            online.setAdapter(new UserListAdapter(mContext, mGuild, true));
-            offline.setAdapter(new UserListAdapter(mContext, mGuild, false));
+            mUserListView = (ListView) findViewById(R.id.onlineUserList);
+            assert mUserListView != null;
+            mUserListView.setAdapter(new UserListAdapter(mContext, mGuild));
         }
         // Setup onItemClick for text channel list
-        textChannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mTextChannelView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 switchChannel((Channel) parent.getAdapter().getItem(position));
@@ -457,12 +453,95 @@ public class ChatActivity extends BaseActivity {
     // This is to refresh the channel after resuming from suspend (and reconnecting websocket)
     @EventSubscriber
     @SuppressWarnings("unused")
-    public void onReady(ReadyEvent event) {
+    public void onReady(final ReadyEvent event) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 switchChannel(mChannel);
             }
         });
+    }
+
+    // User events to update the user list
+    protected void refreshUserList() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ((UserListAdapter) mUserListView.getAdapter()).notifyDataSetChanged();
+            }
+        });
+    }
+
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onGameChange(final GameChangeEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onPresenceUpdate(final PresenceUpdateEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserJoin(final UserJoinEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserLeave(final UserLeaveEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserBan(final UserBanEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserUpdate(final UserUpdateEvent event) {
+        if(mGuild != null && mGuild.getUserByID(event.getNewUser().getID()) != null)
+            refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onRoleCreate(final RoleCreateEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onRoleDelete(final RoleDeleteEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onRoleUpdate(final RoleUpdateEvent event) {
+        if(event.getGuild().equals(mGuild)) refreshUserList();
+    }
+
+    // For channels changing
+    protected void refreshTextChannels() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ((TextChannelAdapter) mTextChannelView.getAdapter()).notifyDataSetChanged();
+            }
+        });
+    }
+
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onChannelCreate(final ChannelCreateEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshTextChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onChannelDelete(final ChannelDeleteEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshTextChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onChannelUpdate(final ChannelUpdateEvent event) {
+        if(event.getNewChannel().getGuild().equals(mGuild)) refreshTextChannels();
     }
 }
