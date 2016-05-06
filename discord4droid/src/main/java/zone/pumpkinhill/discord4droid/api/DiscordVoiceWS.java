@@ -11,6 +11,8 @@ import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
 
+import org.jitsi.impl.neomedia.codec.audio.opus.Opus;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.InflaterInputStream;
 
+import zone.pumpkinhill.discord4droid.handle.events.AudioReceiveEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceDisconnectedEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoicePingEvent;
 import zone.pumpkinhill.discord4droid.handle.events.VoiceUserSpeakingEvent;
@@ -71,6 +75,7 @@ public class DiscordVoiceWS extends WebSocketAdapter {
     private WebSocket socket;
 
     public DiscordVoiceWS(VoiceUpdateResponse response, DiscordClient client) throws Exception {
+        Opus.assertOpusIsFunctional();
         this.client = client;
         this.event = response;
         this.guild = client.getGuildByID(event.guild_id);
@@ -169,32 +174,28 @@ public class DiscordVoiceWS extends WebSocketAdapter {
 
     private void setupSendThread() {
         Runnable sendThread = new Runnable() {
-            //char seq = 0;
-            //int timestamp = 0;      //Used to sync up our packets within the same timeframe of other people talking.
-
+            char seq = 0;
+            int timestamp = 0; //Used to sync up our packets within the same timeframe of other people talking.
             @Override
             public void run() {
                 try {
-                    if (isConnected.get()) {
-                        /*
-                        AudioChannel.AudioData data = guild.getAudioChannel().getAudioData(OPUS_FRAME_SIZE);
-                        if (data != null) {
-                            client.timer = System.currentTimeMillis();
-                            // TODO: Fix audio
-                            AudioPacket packet = new AudioPacket(seq, timestamp, ssrc, data.rawData, data.metaData.channels, secret);
-                            if (!isSpeaking)
-                                setSpeaking(true);
-                            udpSocket.send(packet.asUdpPacket(addressPort));
-
-                            if (seq+1 > Character.MAX_VALUE)
-                                seq = 0;
-                            else
-                                seq++;
-
-                            timestamp += OPUS_FRAME_SIZE;
-                        } else if (isSpeaking)
-                        */
-                            setSpeaking(false);
+                    if (!isConnected.get()) return;
+                    byte[] data = guild.getAudioChannel().getAudioData(OPUS_FRAME_SIZE);
+                    if (data != null) {
+                        client.timer = System.currentTimeMillis();
+                        AudioPacket packet = new AudioPacket(seq, timestamp, ssrc, data, 1, secret);
+                        if (!isSpeaking) {
+                            setSpeaking(true);
+                        }
+                        udpSocket.send(packet.asUdpPacket(addressPort));
+                        if (seq+1 > Character.MAX_VALUE) {
+                            seq = 0;
+                        } else {
+                            seq++;
+                        }
+                        timestamp += OPUS_FRAME_SIZE;
+                    } else if (isSpeaking) {
+                        setSpeaking(false);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error creating thread to send audio: " + e);
@@ -205,21 +206,25 @@ public class DiscordVoiceWS extends WebSocketAdapter {
     }
 
     private void setupReceiveThread() {
-//		Runnable receiveThread = ()->{
-//			if (isConnected.get()) {
-//				DatagramPacket receivedPacket = new DatagramPacket(new byte[1920], 1920);
-//				try {
-//					udpSocket.receive(receivedPacket);
-//
-//					AudioPacket packet = new AudioPacket(receivedPacket);
-//					client.getDispatcher().dispatch(new AudioReceiveEvent(packet));
-//				} catch (SocketException e) {
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}
-//		};
-//		executorService.scheduleAtFixedRate(receiveThread, 0, OPUS_FRAME_TIME_AMOUNT, TimeUnit.MILLISECONDS);
+		Runnable receiveThread = new Runnable() {
+            @Override
+            public void run() {
+                if (isConnected.get()) {
+                    DatagramPacket receivedPacket = new DatagramPacket(new byte[1920], 1920);
+                    try {
+                        udpSocket.receive(receivedPacket);
+
+                        AudioPacket packet = new AudioPacket(receivedPacket);
+                        client.getDispatcher().dispatch(new AudioReceiveEvent(packet));
+                    } catch (SocketException e) {
+                        Log.v(TAG, "" + e);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+		};
+		executorService.scheduleAtFixedRate(receiveThread, 0, OPUS_FRAME_TIME_AMOUNT, TimeUnit.MILLISECONDS);
     }
 
     private void startKeepalive(int hearbeat_interval) {

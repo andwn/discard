@@ -5,10 +5,10 @@ include $(OPUS_DIR)/Android.mk
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE        := codec
-LOCAL_SRC_FILES     := opus_jni.c
+LOCAL_MODULE        := jnopus
+LOCAL_SRC_FILES     := jnopus.c
 LOCAL_CFLAGS        := -DNULL=0
 LOCAL_LDLIBS        := -lm -llog
 LOCAL_C_INCLUDES    := $(LOCAL_PATH)/$(OPUS_DIR)/include
-LOCAL_SHARED_LIBRARIES := opus-jni
+LOCAL_SHARED_LIBRARIES := opus
 include $(BUILD_SHARED_LIBRARY)

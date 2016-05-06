@@ -11,6 +11,7 @@ import zone.pumpkinhill.discord4droid.api.DiscordClient;
 import zone.pumpkinhill.discord4droid.api.DiscordUtils;
 import zone.pumpkinhill.discord4droid.api.Endpoints;
 import zone.pumpkinhill.discord4droid.api.Requests;
+import zone.pumpkinhill.discord4droid.handle.AudioChannel;
 import zone.pumpkinhill.discord4droid.handle.events.GuildUpdateEvent;
 import zone.pumpkinhill.discord4droid.json.generic.RoleResponse;
 import zone.pumpkinhill.discord4droid.json.requests.ChannelCreateRequest;
@@ -44,6 +45,8 @@ public class Guild extends DiscordObject {
     protected String name, icon, iconURL;
     protected String ownerID, regionID;
 
+    protected volatile AudioChannel audioChannel;
+
     protected String afkChannel;
     protected int afkTimeout;
 
@@ -68,6 +71,7 @@ public class Guild extends DiscordObject {
         this.afkChannel = afkChannel;
         this.afkTimeout = afkTimeout;
         this.regionID = region;
+        this.audioChannel = new AudioChannel();
     }
 
     /**
@@ -623,6 +627,10 @@ public class Guild extends DiscordObject {
                         new BasicNameValuePair("authorization", client.getToken()),
                         new BasicNameValuePair("content-type", "application/json")), PruneResponse.class);
         return response.pruned;
+    }
+
+    public AudioChannel getAudioChannel() {
+        return audioChannel;
     }
 
     // Cached stuff

@@ -1,1 +1,1 @@
-include ':app', ':discord4droid', ':libopus'
+include ':app', ':discord4droid', ':jnopus'

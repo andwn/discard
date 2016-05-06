@@ -2,6 +2,8 @@ package zone.pumpkinhill.discord4droid.api;
 
 import android.util.Log;
 
+import org.jitsi.impl.neomedia.codec.audio.opus.Opus;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
