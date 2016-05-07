@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -59,12 +60,15 @@ public class ChatActivity extends BaseActivity {
         showMenuProfile = true;
         // Get the layouts and views
         mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
-        ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
-        TextView drName = (TextView) findViewById(R.id.guildName);
-        mChannelView = (ListView) findViewById(R.id.channelList);
+        assert mLayout != null;
+        ImageView drIcon = (ImageView) mLayout.findViewById(R.id.guildIcon);
+        TextView drName = (TextView) mLayout.findViewById(R.id.guildName);
+        TextView drPlaying = (TextView) mLayout.findViewById(R.id.nowPlaying);
+        mChannelView = (ListView) mLayout.findViewById(R.id.channelList);
         // Make sure they aren't null
         assert drIcon != null;
         assert drName != null;
+        assert drPlaying != null;
         assert mChannelView != null;
         // Subscribe to message events so things can be updated in real time
         ClientHelper.subscribe(this);
@@ -87,6 +91,7 @@ public class ChatActivity extends BaseActivity {
             // Setup drawer
             drIcon.setImageResource(R.drawable.ic_menu_camera);
             drName.setText("Direct Messages");
+            drPlaying.setVisibility(View.GONE);
             // Setup adapter for text channel list
             mChannelView.setAdapter(new ChannelListAdapter(mContext, channelList));
             // Disable the user list drawer
@@ -111,6 +116,7 @@ public class ChatActivity extends BaseActivity {
             // Drawer
             drIcon.setImageBitmap(ClientHelper.cache.get(mGuild.getID()));
             drName.setText(mGuild.getName());
+            drPlaying.setVisibility(View.GONE);
             // Setup adapter for text channel list
             mChannelView.setAdapter(new ChannelListAdapter(mContext, mGuild));
             // Setup user list drawer
@@ -118,6 +124,17 @@ public class ChatActivity extends BaseActivity {
             assert mUserListView != null;
             mUserListView.setAdapter(new UserListAdapter(mContext, mGuild));
         }
+        // Bottom of channel drawer
+        User ourUser = ClientHelper.client.getOurUser();
+        ImageView ourAvatar = (ImageView) findViewById(R.id.ourAvatar);
+        TextView ourName = (TextView) findViewById(R.id.ourName);
+        TextView ourDiscriminator = (TextView) findViewById(R.id.ourDiscriminator);
+        assert ourAvatar != null;
+        assert ourName != null;
+        assert ourDiscriminator != null;
+        ourAvatar.setImageBitmap(ClientHelper.cache.get(ourUser.getID()));
+        ourName.setText(ourUser.getName());
+        ourDiscriminator.setText("#".concat(ourUser.getDiscriminator()));
         // Setup onItemClick for text channel list
         mChannelView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -468,12 +485,14 @@ public class ChatActivity extends BaseActivity {
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onGameChange(final GameChangeEvent event) {
-        if(event.getGuild().equals(mGuild)) refreshUserList();
+        if(event.getGuild() != null && event.getGuild().equals(mGuild)) refreshUserList();
+        else if(mChannel.isPrivate()) refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onPresenceUpdate(final PresenceUpdateEvent event) {
-        if(event.getGuild().equals(mGuild)) refreshUserList();
+        if(event.getGuild() != null && event.getGuild().equals(mGuild)) refreshUserList();
+        else if(mChannel.isPrivate()) refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
@@ -493,8 +512,11 @@ public class ChatActivity extends BaseActivity {
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onUserUpdate(final UserUpdateEvent event) {
-        if(mGuild != null && mGuild.getUserByID(event.getNewUser().getID()) != null)
+        if(mGuild != null && mGuild.getUserByID(event.getNewUser().getID()) != null) {
             refreshUserList();
+        } else if(mChannel.isPrivate()) {
+            refreshChannels();
+        }
     }
     @EventSubscriber
     @SuppressWarnings("unused")
@@ -551,5 +573,31 @@ public class ChatActivity extends BaseActivity {
     @SuppressWarnings("unused")
     public void onVoiceChannelUpdate(final VoiceChannelUpdateEvent event) {
         if(event.getNewVoiceChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserVoiceChannelJoin(final UserVoiceChannelJoinEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserVoiceChannelMove(final UserVoiceChannelMoveEvent event) {
+        if(event.getNewChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserVoiceChannelLeave(final UserVoiceChannelLeaveEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onUserVoiceStateUpdate(final UserVoiceStateUpdateEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onVoiceUserSpeaking(final VoiceUserSpeakingEvent event) {
+        if(event.getUser().getVoiceChannel() != null) refreshChannels();
     }
 }

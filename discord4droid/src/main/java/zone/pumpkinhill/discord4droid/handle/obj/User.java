@@ -64,6 +64,10 @@ public class User extends DiscordObject {
      */
     protected VoiceChannel channel;
 
+    protected UserVoiceState voiceState;
+
+    protected boolean speaking;
+
     public User(DiscordClient client, String name, String id, String discriminator, String avatar, Presences presence) {
         super(client, id);
         this.name = name;
@@ -72,6 +76,8 @@ public class User extends DiscordObject {
         this.avatarURL = String.format(client.getCDN() + Endpoints.AVATARS, this.id, this.avatar);
         this.presence = presence;
         this.roles = new HashMap<>();
+        this.voiceState = new UserVoiceState(false, false, false, false);
+        this.speaking = false;
     }
 
     /**
@@ -93,24 +99,6 @@ public class User extends DiscordObject {
     }
 
     /**
-     * Sets the user's CACHED game.
-     *
-     * @param game The game.
-     */
-    public void setGame(String game) {
-        this.game = game;
-    }
-
-    /**
-     * Sets the user's CACHED username.
-     *
-     * @param name The username.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Gets the user's avatar id.
      *
      * @return The avatar id.
@@ -129,31 +117,12 @@ public class User extends DiscordObject {
     }
 
     /**
-     * Sets the user's CACHED avatar id.
-     *
-     * @param avatar The user's avatar id.
-     */
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-        this.avatarURL = String.format(client.getCDN() + Endpoints.AVATARS, this.id, this.avatar);
-    }
-
-    /**
      * Gets the user's presence.
      *
      * @return The user's presence.
      */
     public Presences getPresence() {
         return presence;
-    }
-
-    /**
-     * Sets the CACHED presence of the user.
-     *
-     * @param presence The new presence.
-     */
-    public void setPresence(Presences presence) {
-        this.presence = presence;
     }
 
     /**
@@ -175,15 +144,6 @@ public class User extends DiscordObject {
     }
 
     /**
-     * Sets the CACHED discriminator for the user.
-     *
-     * @param discriminator The user's new discriminator.
-     */
-    public void setDiscriminator(String discriminator) {
-        this.discriminator = discriminator;
-    }
-
-    /**
      * Gets the roles the user is a part of.
      *
      * @param guild The guild to check the roles for.
@@ -197,20 +157,6 @@ public class User extends DiscordObject {
         } else {
             return new ArrayList<>();
         }
-    }
-
-    /**
-     * CACHES a role to the user.
-     *
-     * @param guildID The guild the role is for.
-     * @param role The role.
-     */
-    public void addRole(String guildID, Role role) {
-        if (!roles.containsKey(guildID)) {
-            roles.put(guildID, new ArrayList<Role>());
-        }
-
-        roles.get(guildID).add(role);
     }
 
     /**
@@ -245,20 +191,53 @@ public class User extends DiscordObject {
         return channel;
     }
 
-    /**
-     * Sets the CACHED voice channel this user is in.
-     *
-     * @param channel The new channel.
-     */
+    public UserVoiceState getVoiceState() {
+        return voiceState;
+    }
+
+    public boolean isSpeaking() {
+        return speaking;
+    }
+
+    // Local setters
+    public void setGame(String game) {
+        this.game = game;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+        this.avatarURL = String.format(client.getCDN() + Endpoints.AVATARS, this.id, this.avatar);
+    }
+    public void setPresence(Presences presence) {
+        this.presence = presence;
+    }
+    public void setDiscriminator(String discriminator) {
+        this.discriminator = discriminator;
+    }
+    public void addRole(String guildID, Role role) {
+        if (!roles.containsKey(guildID)) {
+            roles.put(guildID, new ArrayList<Role>());
+        }
+        roles.get(guildID).add(role);
+    }
     public void setVoiceChannel(VoiceChannel channel) {
         this.channel = channel;
     }
+    public void setVoiceState(UserVoiceState voiceState) {
+        this.voiceState = voiceState;
+    }
+    public void setSpeaking(boolean speaking) {
+        this.speaking = speaking;
+    }
 
+    // Abstract / Overrides
     @Override
     public String toString() {
         return mention();
     }
-
     public User copy() {
         return new User(client, name, id, discriminator, avatar, presence);
     }

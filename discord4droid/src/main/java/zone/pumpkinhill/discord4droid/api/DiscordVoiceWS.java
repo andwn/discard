@@ -68,7 +68,7 @@ public class DiscordVoiceWS extends WebSocketAdapter {
     private DatagramSocket udpSocket;
 
     private InetSocketAddress addressPort;
-    private boolean isSpeaking;
+    //private boolean isSpeaking;
 
     private byte[] secret;
 
@@ -161,8 +161,9 @@ public class DiscordVoiceWS extends WebSocketAdapter {
                 if (user == null) {
                     Log.w(TAG, "Got an Audio USER_SPEAKING_UPDATE for a non-existent User. JSON: " + object.toString());
                     return;
+                } else {
+                    user.setSpeaking(isSpeaking);
                 }
-
                 client.dispatcher.dispatch(new VoiceUserSpeakingEvent(user, ssrc, isSpeaking));
                 break;
             }
@@ -170,6 +171,10 @@ public class DiscordVoiceWS extends WebSocketAdapter {
                 Log.w(TAG, "Unknown voice packet: " + object);
             }
         }
+    }
+
+    private boolean isSpeaking() {
+        return client.getOurUser().isSpeaking();
     }
 
     private void setupSendThread() {
@@ -184,7 +189,7 @@ public class DiscordVoiceWS extends WebSocketAdapter {
                     if (data != null) {
                         client.timer = System.currentTimeMillis();
                         AudioPacket packet = new AudioPacket(seq, timestamp, ssrc, data, 1, secret);
-                        if (!isSpeaking) {
+                        if (!isSpeaking()) {
                             setSpeaking(true);
                         }
                         udpSocket.send(packet.asUdpPacket(addressPort));
@@ -194,7 +199,7 @@ public class DiscordVoiceWS extends WebSocketAdapter {
                             seq++;
                         }
                         timestamp += OPUS_FRAME_SIZE;
-                    } else if (isSpeaking) {
+                    } else if (isSpeaking()) {
                         setSpeaking(false);
                     }
                 } catch (Exception e) {
@@ -313,8 +318,7 @@ public class DiscordVoiceWS extends WebSocketAdapter {
      * @param speaking: is voice currently being sent
      */
     public void setSpeaking(boolean speaking) {
-        this.isSpeaking = speaking;
-
+        client.getOurUser().setSpeaking(speaking);
         send(DiscordUtils.GSON.toJson(new VoiceSpeakingRequest(speaking)));
     }
 }

@@ -50,6 +50,7 @@ public class GuildListAdapter extends DiscordAdapter {
         }
         ImageView icon = (ImageView) view.findViewById(R.id.guildIcon);
         TextView name = (TextView) view.findViewById(R.id.guildName);
+        TextView playing = (TextView) view.findViewById(R.id.nowPlaying);
         TextView status = (TextView) view.findViewById(R.id.statusText);
         // Blank this in case of scrolling
         status.setBackgroundResource(android.R.color.transparent);
@@ -76,6 +77,8 @@ public class GuildListAdapter extends DiscordAdapter {
         getAvatarOrIcon(icon, guild.getID(), guild.getIconURL());
         // Fill in the text
         name.setText(guild.getName());
+        // Guilds don't play things, get rid of it
+        playing.setVisibility(View.GONE);
         // Unread mentions indicator
         int mentions = 0;
         for(Channel c : guild.getChannels()) {

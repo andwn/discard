@@ -71,6 +71,7 @@ import zone.pumpkinhill.discord4droid.handle.obj.Presences;
 import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 import zone.pumpkinhill.discord4droid.handle.obj.Role;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
+import zone.pumpkinhill.discord4droid.handle.obj.UserVoiceState;
 import zone.pumpkinhill.discord4droid.handle.obj.VoiceChannel;
 import zone.pumpkinhill.discord4droid.json.requests.ConnectRequest;
 import zone.pumpkinhill.discord4droid.json.requests.KeepAliveRequest;
@@ -834,6 +835,8 @@ public class DiscordWS extends WebSocketAdapter {
                         client.dispatcher.dispatch(new UserVoiceChannelMoveEvent(user, oldChannel, channel));
                     }
                 } else {
+                    user.setVoiceState(new UserVoiceState(event.self_mute, event.self_deaf,
+                            event.mute, event.deaf));
                     client.dispatcher.dispatch(new UserVoiceStateUpdateEvent(user, channel, event.self_mute, event.self_deaf, event.mute, event.deaf, event.suppress));
                 }
             } else {

@@ -26,6 +26,7 @@ import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
 import zone.pumpkinhill.discord4droid.handle.obj.Region;
 import zone.pumpkinhill.discord4droid.handle.obj.Role;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
+import zone.pumpkinhill.discord4droid.handle.obj.UserVoiceState;
 import zone.pumpkinhill.discord4droid.handle.obj.VoiceChannel;
 import zone.pumpkinhill.discord4droid.json.generic.PermissionOverwrite;
 import zone.pumpkinhill.discord4droid.json.generic.RoleResponse;
@@ -209,7 +210,10 @@ public class DiscordUtils {
 
             if (json.voice_states != null) {
                 for (VoiceStateResponse voiceState : json.voice_states) {
-                    (guild.getUserByID(voiceState.user_id)).setVoiceChannel(guild.getVoiceChannelByID(voiceState.channel_id));
+                    User u = guild.getUserByID(voiceState.user_id);
+                    u.setVoiceChannel(guild.getVoiceChannelByID(voiceState.channel_id));
+                    u.setVoiceState(new UserVoiceState(voiceState.self_mute, voiceState.self_deaf,
+                            voiceState.mute, voiceState.deaf));
                 }
             }
         }

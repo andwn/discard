@@ -128,10 +128,19 @@ public class ChannelListAdapter extends DiscordAdapter {
                 View child = mInflater.inflate(R.layout.list_item_voiceuser, null);
                 ImageView userAvatar = (ImageView) child.findViewById(R.id.userAvatar);
                 TextView userName = (TextView) child.findViewById(R.id.userName);
-                //ImageView micMute = (ImageView) child.findViewById(R.id.micMute);
-                //ImageView speakerMute = (ImageView) child.findViewById(R.id.speakerMute);
+                ImageView micMute = (ImageView) child.findViewById(R.id.micMute);
+                ImageView speakerMute = (ImageView) child.findViewById(R.id.speakerMute);
                 getAvatarOrIcon(userAvatar, u.getID(), u.getAvatarURL());
                 userName.setText(u.getName());
+                if(u.getVoiceState().isMute()) {
+                    micMute.setImageResource(R.drawable.mic_mute);
+                }
+                if(u.getVoiceState().isDeaf()) {
+                    speakerMute.setImageResource(R.drawable.speaker_deafen);
+                }
+                if(u.isSpeaking()) {
+                    userAvatar.setBackgroundColor(Color.GREEN);
+                }
                 layout.addView(child);
             }
         } else {
