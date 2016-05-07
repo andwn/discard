@@ -86,7 +86,8 @@ public class DiscordUtils {
         User user;
         if ((user = client.getUserByID(response.id)) != null) {
             user.setAvatar(response.avatar);
-            user.setName(response.username);
+            if(response.username != null && !response.username.isEmpty())
+                user.setName(response.username);
             user.setDiscriminator(response.discriminator);
         } else {
             user = new User(client, response.username, response.id, response.discriminator, response.avatar, Presences.OFFLINE);

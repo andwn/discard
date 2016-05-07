@@ -2,6 +2,7 @@ package zone.pumpkinhill.discard.adapter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.text.Html;
 import android.text.Spanned;
 import android.util.Patterns;
@@ -22,6 +23,7 @@ import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.MessageUpdateEvent;
 import zone.pumpkinhill.discord4droid.handle.obj.Attachment;
 import zone.pumpkinhill.discord4droid.handle.obj.Message;
+import zone.pumpkinhill.discord4droid.handle.obj.Role;
 import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
@@ -69,8 +71,18 @@ public class ChatMessageAdapter extends DiscordAdapter {
         ImageView avatar = (ImageView) view.findViewById(R.id.avatarImageView);
         getAvatarOrIcon(avatar, msg.getAuthor().getID(), msg.getAuthor().getAvatarURL());
         // Fill in the text
-        TextView name = (TextView) view.findViewById(R.id.nameTextView);
+        TextView name = (TextView) view.findViewById(R.id.guildName);
         name.setText(msg.getAuthor().getName());
+        List<Role> roles = msg.getAuthor().getRolesForGuild(msg.getGuild());
+        int color = Color.BLACK; // 0xFF000000
+        for(Role r : roles) {
+            if(r.getColor() != 0) {
+                // Discord colors are RGB, not ARGB, so we "add" to the opaque black
+                color += r.getColor();
+                break;
+            }
+        }
+        name.setTextColor(color);
         if(mPref.getBoolean("show_discriminator", false)) {
             TextView discriminator = (TextView) view.findViewById(R.id.discriminatorTextView);
             discriminator.setText("#".concat(msg.getAuthor().getDiscriminator()));
