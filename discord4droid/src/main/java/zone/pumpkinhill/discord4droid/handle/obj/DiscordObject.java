@@ -37,7 +37,7 @@ public abstract class DiscordObject {
 
     @Override
     public final boolean equals(Object other) {
-        return this.getClass().isAssignableFrom(other.getClass()) &&
+        return other != null && this.getClass().isAssignableFrom(other.getClass()) &&
                 id.equals(((DiscordObject) other).getID());
     }
 }

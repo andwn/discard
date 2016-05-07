@@ -3,7 +3,6 @@ package zone.pumpkinhill.discard.activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -36,22 +35,17 @@ import zone.pumpkinhill.discard.adapter.*;
 import zone.pumpkinhill.discard.task.NetworkTask;
 import zone.pumpkinhill.discord4droid.api.EventSubscriber;
 import zone.pumpkinhill.discord4droid.handle.events.*;
-import zone.pumpkinhill.discord4droid.handle.obj.Channel;
-import zone.pumpkinhill.discord4droid.handle.obj.Guild;
-import zone.pumpkinhill.discord4droid.handle.obj.Message;
-import zone.pumpkinhill.discord4droid.handle.obj.PrivateChannel;
+import zone.pumpkinhill.discord4droid.handle.obj.*;
 
 public class ChatActivity extends BaseActivity {
     private final static String TAG = ChatActivity.class.getCanonicalName();
 
-    private Context mContext = this;
     private Guild mGuild;
-    private List<Channel> mChannelList;
     private NetworkTask mLoadTask = null;
     private String mEditingMessage = null;
-
     private Channel mChannel;
-    private ListView mTextChannelView;
+
+    private ListView mChannelView;
     private ListView mMessageView;
     private ListView mUserListView;
     private DrawerLayout mLayout;
@@ -67,13 +61,11 @@ public class ChatActivity extends BaseActivity {
         mLayout = (DrawerLayout) findViewById(R.id.chatActivity);
         ImageView drIcon = (ImageView) findViewById(R.id.guildIcon);
         TextView drName = (TextView) findViewById(R.id.guildName);
-        mTextChannelView = (ListView) findViewById(R.id.textChannelList);
-        ListView voiceChannels = (ListView) findViewById(R.id.voiceChannelList);
+        mChannelView = (ListView) findViewById(R.id.channelList);
         // Make sure they aren't null
         assert drIcon != null;
         assert drName != null;
-        assert mTextChannelView != null;
-        assert voiceChannels != null;
+        assert mChannelView != null;
         // Subscribe to message events so things can be updated in real time
         ClientHelper.subscribe(this);
         // Grab intent parameters, which guild and channel to focus
@@ -81,30 +73,24 @@ public class ChatActivity extends BaseActivity {
         String channelId = getIntent().getExtras().getString("channelId");
         if(guildId == null || guildId.equals("0")) {
             // No guild given -- this is a private chat
-            mChannelList = new ArrayList<>();
+            List<Channel> channelList = new ArrayList<>();
             for(Channel c : ClientHelper.client.getChannels(true)) {
                 if(c == null || !(c instanceof PrivateChannel)) continue;
                 if(channelId != null && channelId.equals(c.getID())) mChannel = c;
-                mChannelList.add(c);
+                channelList.add(c);
             }
-            if(mChannelList.size() == 0) { // No private channels
+            if(channelList.size() == 0) { // No private channels
                 finish();
                 return;
             }
+                if(mChannel == null) mChannel = channelList.get(0);
             // Setup drawer
             drIcon.setImageResource(R.drawable.ic_menu_camera);
             drName.setText("Direct Messages");
             // Setup adapter for text channel list
-            mTextChannelView.setAdapter(new PrivateChannelAdapter(mContext, mChannelList));
+            mChannelView.setAdapter(new ChannelListAdapter(mContext, channelList));
             // Disable the user list drawer
             mLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END);
-            // Clear the "Text Channels" and "Voice Channels" text
-            TextView tcLabel = (TextView) findViewById(R.id.textChannelLabel);
-            TextView vcLabel = (TextView) findViewById(R.id.voiceChannelLabel);
-            assert tcLabel != null;
-            assert vcLabel != null;
-            tcLabel.setText("");
-            vcLabel.setText("");
         } else {
             // Guild
             mGuild = ClientHelper.client.getGuildByID(guildId);
@@ -113,36 +99,39 @@ public class ChatActivity extends BaseActivity {
                 finish();
                 return;
             }
-            mChannelList = mGuild.getChannels();
-            if(mChannelList.size() == 0) { // No channels
+            if(mGuild.getChannels().size() == 0) { // No channels
                 finish();
                 return;
             }
             if(channelId != null && !channelId.isEmpty()) {
                 mChannel = mGuild.getChannelByID(channelId);
+            } else {
+                mChannel = mGuild.getChannels().get(0);
             }
             // Drawer
             drIcon.setImageBitmap(ClientHelper.cache.get(mGuild.getID()));
             drName.setText(mGuild.getName());
             // Setup adapter for text channel list
-            mTextChannelView.setAdapter(new TextChannelAdapter(mContext, mGuild.getChannels()));
-            // Setup adapter for voice channel list
-            voiceChannels.setAdapter(new VoiceChannelAdapter(mContext, mGuild.getVoiceChannels()));
+            mChannelView.setAdapter(new ChannelListAdapter(mContext, mGuild));
             // Setup user list drawer
             mUserListView = (ListView) findViewById(R.id.onlineUserList);
             assert mUserListView != null;
             mUserListView.setAdapter(new UserListAdapter(mContext, mGuild));
         }
         // Setup onItemClick for text channel list
-        mTextChannelView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mChannelView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                switchChannel((Channel) parent.getAdapter().getItem(position));
-                mLayout.closeDrawers();
+                Channel newChannel = (Channel) parent.getAdapter().getItem(position);
+                if(newChannel instanceof VoiceChannel) {
+                    gotoVoiceChannel(newChannel);
+                } else {
+                    switchChannel(newChannel);
+                    mLayout.closeDrawers();
+                }
             }
         });
         // Fill in message list
-        if(mChannel == null) mChannel = mChannelList.get(0);
         mMessageView = (ListView) findViewById(R.id.messageListView);
         assert mMessageView != null;
         registerForContextMenu(mMessageView);
@@ -216,6 +205,10 @@ public class ChatActivity extends BaseActivity {
         mLoadTask = new NetworkTask(mContext);
         mLoadTask.execute("load-messages", mChannel.getID(), "20", null);
         setTitle(mChannel.getName());
+    }
+
+    private void gotoVoiceChannel(Channel newChannel) {
+
     }
 
     @Override
@@ -520,11 +513,11 @@ public class ChatActivity extends BaseActivity {
     }
 
     // For channels changing
-    protected void refreshTextChannels() {
+    protected void refreshChannels() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ((TextChannelAdapter) mTextChannelView.getAdapter()).notifyDataSetChanged();
+                ((ChannelListAdapter) mChannelView.getAdapter()).notifyDataSetChanged();
             }
         });
     }
@@ -532,16 +525,31 @@ public class ChatActivity extends BaseActivity {
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelCreate(final ChannelCreateEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshTextChannels();
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelDelete(final ChannelDeleteEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshTextChannels();
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelUpdate(final ChannelUpdateEvent event) {
-        if(event.getNewChannel().getGuild().equals(mGuild)) refreshTextChannels();
+        if(event.getNewChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onVoiceChannelCreate(final VoiceChannelCreateEvent event) {
+        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onVoiceChannelDelete(final VoiceChannelDeleteEvent event) {
+        if(event.getVoiceChannel().getGuild().equals(mGuild)) refreshChannels();
+    }
+    @EventSubscriber
+    @SuppressWarnings("unused")
+    public void onVoiceChannelUpdate(final VoiceChannelUpdateEvent event) {
+        if(event.getNewVoiceChannel().getGuild().equals(mGuild)) refreshChannels();
     }
 }

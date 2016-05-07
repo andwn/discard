@@ -29,13 +29,15 @@
             android:text=""
             android:id="@+id/guildName"
             android:textColor="#222222"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:paddingLeft="2dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:id="@+id/nowPlaying" />
+            android:id="@+id/nowPlaying"
+            android:paddingLeft="2dp" />
     </LinearLayout>
 
     <View

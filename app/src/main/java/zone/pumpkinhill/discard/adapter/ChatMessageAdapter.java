@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.text.Html;
 import android.text.Spanned;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,8 @@ import zone.pumpkinhill.discord4droid.handle.obj.User;
 import zone.pumpkinhill.discord4droid.util.MessageList;
 
 public class ChatMessageAdapter extends DiscordAdapter {
+    private final static String TAG = ChatMessageAdapter.class.getSimpleName();
+
     private MessageList mMessages;
     private final Date mYesterday;
 
@@ -71,15 +74,17 @@ public class ChatMessageAdapter extends DiscordAdapter {
         ImageView avatar = (ImageView) view.findViewById(R.id.avatarImageView);
         getAvatarOrIcon(avatar, msg.getAuthor().getID(), msg.getAuthor().getAvatarURL());
         // Fill in the text
-        TextView name = (TextView) view.findViewById(R.id.guildName);
+        TextView name = (TextView) view.findViewById(R.id.nameTextView);
         name.setText(msg.getAuthor().getName());
-        List<Role> roles = msg.getAuthor().getRolesForGuild(msg.getGuild());
         int color = Color.BLACK; // 0xFF000000
-        for(Role r : roles) {
-            if(r.getColor() != 0) {
-                // Discord colors are RGB, not ARGB, so we "add" to the opaque black
-                color += r.getColor();
-                break;
+        if(msg.getGuild() != null) { // No guild in private channels
+            List<Role> roles = msg.getAuthor().getRolesForGuild(msg.getGuild());
+            for (Role r : roles) {
+                if (r.getColor() != 0) {
+                    // Discord colors are RGB, not ARGB, so we "add" to the opaque black
+                    color += r.getColor();
+                    break;
+                }
             }
         }
         name.setTextColor(color);
@@ -96,14 +101,23 @@ public class ChatMessageAdapter extends DiscordAdapter {
         // Message content and formatting
         TextView content = (TextView) view.findViewById(R.id.messageContent);
         String contentStr = msg.getContent();
-        List<User> mentions = msg.getMentions();
-        for(User u : mentions) {
-            if(u == null) continue; // I actually got an NPE here...
-            contentStr = contentStr.replaceAll("<@" + u.getID() + ">", "@" + u.getName());
+        if(contentStr != null && !contentStr.isEmpty()) {
+            List<String> smentions = msg.getRawMentions();
+            for(String m : smentions) {
+                Log.d(TAG, m);
+            }
+            List<User> mentions = msg.getMentions();
+            for (User u : mentions) {
+                if (u == null) continue; // I actually got an NPE here...
+                contentStr = contentStr.replaceAll("<@" + u.getID() + ">", "@" + u.getName());
+                contentStr = contentStr.replaceAll("<@!" + u.getID() + ">", "@" + u.getName());
+            }
+            String contentHtml = Markdown.markdownToHtml(contentStr);
+            Spanned spanned = Html.fromHtml(contentHtml);
+            content.setText(trimEnd(spanned));
+        } else {
+            content.setText("");
         }
-        String contentHtml = Markdown.markdownToHtml(contentStr);
-        Spanned spanned = Html.fromHtml(contentHtml);
-        content.setText(trimEnd(spanned));
         // Attachment
         ImageView attachment = (ImageView) view.findViewById(R.id.attachment);
         // Clear anything that might have been left over
@@ -111,7 +125,7 @@ public class ChatMessageAdapter extends DiscordAdapter {
         attachment.setOnClickListener(null);
         attachment.setOnLongClickListener(null);
         // Look for any thumbnails, display the first image
-        if(msg.getAttachments().size() > 0 && mPref.getBoolean("preload_links", true)) {
+        if(msg.getAttachments().size() > 0 && mPref.getBoolean("preload_attachments", true)) {
             for (Attachment a : msg.getAttachments()) {
                 if(getThumbnail(attachment, a)) {
                     attachment.setOnClickListener(new ThumbnailOnClickListener(a.getUrl()));

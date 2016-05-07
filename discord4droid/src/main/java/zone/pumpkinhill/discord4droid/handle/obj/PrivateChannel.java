@@ -115,7 +115,7 @@ public class PrivateChannel extends Channel {
 
     @Override
     public Guild getGuild() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

@@ -17,40 +17,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/scrollView" >
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Text Channels"
-            android:id="@+id/textChannelLabel" />
-    </ScrollView>
-
-    <LinearLayout
-        android:orientation="vertical"
+    <ListView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <ListView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/textChannelList"
-            android:layout_weight="1" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Voice Channels"
-            android:id="@+id/voiceChannelLabel" />
-
-        <ListView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/voiceChannelList"
-            android:layout_weight="1" />
-    </LinearLayout>
+        android:layout_height="0dp"
+        android:id="@+id/channelList"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent" />
 
 </LinearLayout>

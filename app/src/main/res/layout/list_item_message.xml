@@ -32,7 +32,8 @@
                 android:text=""
                 android:id="@+id/nameTextView"
                 android:textColor="#222222"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:paddingLeft="2dp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -55,13 +56,14 @@
         </LinearLayout>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
             android:id="@+id/messageContent"
             android:textColor="#222222"
             android:linksClickable="true"
-            android:autoLink="web" />
+            android:autoLink="web"
+            android:paddingLeft="2dp" />
 
         <ImageView
             android:layout_width="match_parent"
