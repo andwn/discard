@@ -547,52 +547,62 @@ public class ChatActivity extends BaseActivity {
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelCreate(final ChannelCreateEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelDelete(final ChannelDeleteEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onChannelUpdate(final ChannelUpdateEvent event) {
-        if(event.getNewChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getNewChannel() != null && event.getNewChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onVoiceChannelCreate(final VoiceChannelCreateEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onVoiceChannelDelete(final VoiceChannelDeleteEvent event) {
-        if(event.getVoiceChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getVoiceChannel() != null && event.getVoiceChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onVoiceChannelUpdate(final VoiceChannelUpdateEvent event) {
-        if(event.getNewVoiceChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getNewVoiceChannel() != null && event.getNewVoiceChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onUserVoiceChannelJoin(final UserVoiceChannelJoinEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onUserVoiceChannelMove(final UserVoiceChannelMoveEvent event) {
-        if(event.getNewChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getNewChannel() != null && event.getNewChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onUserVoiceChannelLeave(final UserVoiceChannelLeaveEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
     @EventSubscriber
     @SuppressWarnings("unused")
     public void onUserVoiceStateUpdate(final UserVoiceStateUpdateEvent event) {
-        if(event.getChannel().getGuild().equals(mGuild)) refreshChannels();
+        if(event.getChannel() != null && event.getChannel().getGuild().equals(mGuild))
+            refreshChannels();
     }
 
     @EventSubscriber
