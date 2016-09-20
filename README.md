@@ -1,9 +1,11 @@
 # Discard
-Work in progress Android client for Discord.
+Unfinished Android client for Discord.
 Uses a modified [Discord4J](https://github.com/austinv11/Discord4J).
 
+**This is a dead project. Use [bitlbee-discord](https://github.com/sm00th/bitlbee-discord) with an IRC client instead.**
+
 ## Download
-Coming soon(tm)
+Last version is in the releases tab. Expect NPEs.
 
 ## Build
 1. Clone the repo
